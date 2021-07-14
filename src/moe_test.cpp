@@ -34,20 +34,19 @@ int main(int argc, char *argv[])
     if (result.count("calibrate") > 0){
         prompt("Press ENTER when the:\n\tElbow is fully flexed\n\tForearm is fully pronated\n\tWrist FE is fully Flexed\n\tWrist RU is fully Radially deviated");
         for (auto i = 0; i < moe_n_dof; i++){
-            q8.encoder.zero(i);
+            q8.encoder.zero(encoder_channel[i]);
         }
         return 0;
     }
 
     // EXPERIMENT PARAMETERS
-    vector<bool> active_joints = {true, true, true, true};
+    vector<bool> active_joints = {false, false, false, true};
 
     // trajectory parameters -> desired_pos = traj_amplitude*sin(2.0*PI*traj_frequency*t.as_seconds())
-    vector<double> traj_frequencies = {          0.5,           0.5,           0.5,           0.5}; // Hz
-    vector<double> traj_amplitudes =  { 20.0*DEG2RAD,  20.0*DEG2RAD,  20.0*DEG2RAD,  15.0*DEG2RAD}; // amplitude in radians
+    vector<double> traj_frequencies = {         0.5,           0.45,           0.37,           0.6}; // Hz
+    vector<double> traj_amplitudes =  { 25.0*DEG2RAD,  20.0*DEG2RAD,  20.0*DEG2RAD,  15.0*DEG2RAD}; // amplitude in radians
     vector<double> traj_offsets =     {-35.0*DEG2RAD, -90.0*DEG2RAD, -70.0*DEG2RAD, -35.0*DEG2RAD}; // sinwave offset
-    vector<double> pd_scales = {0.25, 0.05, 0.05, 0.05};
-    Time traj_time = 8_s;
+    Time traj_time = 20_s;
     Time go_to_start_time = 5_s;
     // END EXPERIMENT PARAMETERS
 
@@ -81,13 +80,13 @@ int main(int argc, char *argv[])
         q8.AO.disable_values[i] = 0;
         
         // initialize encoders
-        q8.encoder.units[i] = (2.0*PI/encoder_cprs[i])*gear_ratios[i];
+        q8.encoder.units[encoder_channel[i]] = (2.0*PI/encoder_cprs[i])*gear_ratios[i];
     }
 
     // pd controllers used for each joint
     vector<PdController> joint_controllers;
     for (size_t i = 0; i < moe_n_dof; i++){
-        joint_controllers.emplace_back(Kps[i]*pd_scales[i],Kds[i]*pd_scales[i]);
+        joint_controllers.emplace_back(Kps[i],Kds[i]);
     }
 
     q8.enable();
@@ -99,11 +98,12 @@ int main(int argc, char *argv[])
     vector<double> current_pos (num_active_dof,0);
     vector<double> current_vel (num_active_dof,0);
     vector<double> desired_trq (num_active_dof,0);
+    vector<double>  actual_trq (num_active_dof,0);
     vector<double> initial_pos (num_active_dof,0);
     
     // get initial position to use for getting to our starting position for trajectories
     for (size_t i = 0; i < num_active_dof; i++){
-        initial_pos[i] = q8.encoder.positions[active_map[i]];
+        initial_pos[i] = q8.encoder.positions[encoder_channel[active_map[i]]];
     }
 
     // wait for the user to hit enter before starting
@@ -132,8 +132,9 @@ int main(int argc, char *argv[])
             }
 
             // update pos and velocity from the daq
-            current_pos[i] = q8.encoder.positions[moe_joint];
-            current_vel[i] = q8.velocity.velocities[moe_joint];
+            current_pos[i] = q8.encoder.positions[encoder_channel[moe_joint]];
+            current_vel[i] = q8.velocity.velocities[encoder_channel[moe_joint]];
+            actual_trq[i]  = q8.AI[moe_joint]*read_amp_ratios[moe_joint]*Kts[moe_joint]/gear_ratios[moe_joint]*(switch_dirs[moe_joint] ? -1.0 : 1.0);
 
             desired_vel[i] = 0.0;
 
@@ -141,7 +142,7 @@ int main(int argc, char *argv[])
             desired_trq[i] = joint_controllers[moe_joint].calculate(desired_pos[i],current_pos[i],desired_vel[i],current_vel[i]);  
 
             // compute the voltage out based on desired torque
-            double commandedCurrent = desired_trq[i]/Kts[moe_joint]; // Nm / (Nm / A) = [Nm]
+            double commandedCurrent = desired_trq[i]*gear_ratios[moe_joint]/Kts[moe_joint]; // Nm / (Nm / A) = [Nm]
             double volts_out = (switch_dirs[moe_joint] ? -1.0 : 1.0)*commandedCurrent/amp_ratios[moe_joint]; // A / (A / V) = [V]
             q8.AO[moe_joint] = volts_out;      
         }
@@ -171,8 +172,10 @@ int main(int argc, char *argv[])
             data_line.push_back(pos);
         for(const auto& vel : desired_vel)
             data_line.push_back(vel);
-        for(const auto& trq : desired_trq)
-            data_line.push_back(trq);
+        for(const auto& des_trq : desired_trq)
+            data_line.push_back(des_trq);
+        for(const auto& act_trq :  actual_trq)
+            data_line.push_back(act_trq);
         data.push_back(data_line);
         
         t = timer.wait();
@@ -190,7 +193,8 @@ int main(int argc, char *argv[])
                                        "EFE vel (rad/s)", "FPS vel (rad/s)", "WFE vel (rad/s)", "WRU vel (rad/s)",
                                        "EFE des pos (rad)", "FPS des pos (rad)", "WFE des pos (rad)", "WRU des pos (rad)",
                                        "EFE des vel (rad/s)", "FPS des vel (rad/s)", "WFE des vel (rad/s)", "WRU des vel (rad/s)",
-                                       "EFE trq (Nm)", "FPS trq (Nm)", "WFE trq (Nm)", "WRU trq (Nm)"};
+                                       "EFE des trq (Nm)", "FPS des trq (Nm)", "WFE des trq (Nm)", "WRU des trq (Nm)",
+                                       "EFE act trq (Nm)", "FPS act trq (Nm)", "WFE act trq (Nm)", "WRU act trq (Nm)"};
 
     
     // remove header entries that aren't active. this is a dumb way, but couldn't think of a better way at the moment

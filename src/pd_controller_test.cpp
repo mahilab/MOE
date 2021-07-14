@@ -28,10 +28,8 @@ int main(int arc, char const *argv[])
     double traj_amplitude = 25 * DEG2RAD; // amplitude in radians
     double traj_offset = 0*DEG2RAD; // sinwave
 
-    double pd_scale = 0.05; // pd_scale = 0.05 worked for wrist_fe and ru
-
     moe_joint_enum active_joint = wrist_ru;
-    Time traj_time = 8_s;
+    Time traj_time = 10_s;
     // END EXPERIMENT PARAMETERS
 
     // initialize q8
@@ -45,11 +43,11 @@ int main(int arc, char const *argv[])
         q8.AO.disable_values[i] = 0;
         
         // initialize encoders
-        q8.encoder.units[i] = (2*PI/encoder_cprs[i])*gear_ratios[i];
-        q8.encoder.zero(i);
+        q8.encoder.units[encoder_channel[i]] = (2*PI/encoder_cprs[i])*gear_ratios[i];
+        q8.encoder.zero(encoder_channel[i]);
     }
 
-    PdController myController = PdController(Kps[active_joint]*pd_scale,Kds[active_joint]*pd_scale);
+    PdController myController = PdController(Kps[active_joint],Kds[active_joint]);
 
     q8.enable();
 
@@ -68,14 +66,14 @@ int main(int arc, char const *argv[])
         double desired_pos = traj_amplitude*sin(2.0*PI*traj_frequency*t.as_seconds()) + traj_offset;
 
         // get position and velocity of joint we are testing
-        double current_pos = q8.encoder.positions[active_joint];
-        double current_vel = q8.velocity.velocities[active_joint];
+        double current_pos = q8.encoder.positions[encoder_channel[active_joint]];
+        double current_vel = q8.velocity.velocities[encoder_channel[active_joint]];
 
         // calc desired torque using pd controller (des vel is always 0)
         double desiredTorque = myController.calculate(desired_pos,current_pos,0.0,current_vel);
         
         // compute the voltage out
-        double commandedCurrent = desiredTorque/Kts[active_joint]; // Nm / (Nm / A) = [A]
+        double commandedCurrent = desiredTorque*gear_ratios[active_joint]/Kts[active_joint]; // Nm / (Nm / A) = [A]
         double out = (switch_dirs[active_joint] ? -1.0 : 1.0)*commandedCurrent/amp_ratios[active_joint]; // A / (A / V) = [V]
         q8.AO[active_joint] = out;
         q8.write_all();

@@ -17,8 +17,8 @@ int main(int arc, char const *argv[])
                                        true}; // joint 4 (wrist ru)
 
     for (auto i = 0; i < moe_n_dof; i++){
-        q8.encoder.units[i] = (2.0*PI/encoder_cprs[i])*gear_ratios[i];
-        q8.encoder.zero(i);
+        q8.encoder.units[encoder_channel[i]] = (2.0*PI/encoder_cprs[i])*gear_ratios[i];
+        q8.encoder.zero(encoder_channel[i]);
     }
     
     q8.enable();
@@ -33,9 +33,9 @@ int main(int arc, char const *argv[])
             if (active_joints[i]){
                 print("encoder[{}]: {} counts = {:+.2f} rad. -> {:+2f} rad/s",
                             i,
-                            q8.encoder[i],
-                            q8.encoder.positions[i],
-                            q8.velocity.velocities[i]);
+                            q8.encoder[encoder_channel[i]],
+                            q8.encoder.positions[encoder_channel[i]],
+                            q8.velocity.velocities[encoder_channel[i]]);
             }
         }
         
