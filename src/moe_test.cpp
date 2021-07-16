@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     }
 
     // EXPERIMENT PARAMETERS
-    vector<bool> active_joints = {false, false, false, true};
+    vector<bool> active_joints = {false, false, true, false};
 
     // trajectory parameters -> desired_pos = traj_amplitude*sin(2.0*PI*traj_frequency*t.as_seconds())
     vector<double> traj_frequencies = {         0.5,           0.45,           0.37,           0.6}; // Hz
@@ -113,10 +113,11 @@ int main(int argc, char *argv[])
     for (auto i = 0; i < num_active_dof; i++){
         q8.DO[active_map[i]] = TTL_HIGH;
     }
+    enable_realtime();
     
     // double desiredTorque = 0.0; // Nm
     Time t = Time::Zero;
-    Timer timer(1000_Hz);
+    Timer timer(2000_Hz);
     while (!stop && t < traj_time+go_to_start_time) {
         q8.read_all();
 
@@ -139,7 +140,9 @@ int main(int argc, char *argv[])
             desired_vel[i] = 0.0;
 
             // calc desired torque
-            desired_trq[i] = joint_controllers[moe_joint].calculate(desired_pos[i],current_pos[i],desired_vel[i],current_vel[i]);  
+            // desired_trq[i] = joint_controllers[moe_joint].calculate(desired_pos[i],current_pos[i],desired_vel[i],current_vel[i]);  
+            desired_trq[i] = 0.1*sin(2.0*PI*1.0*(t-go_to_start_time).as_seconds());
+
 
             // compute the voltage out based on desired torque
             double commandedCurrent = desired_trq[i]*gear_ratios[moe_joint]/Kts[moe_joint]; // Nm / (Nm / A) = [Nm]
@@ -159,7 +162,9 @@ int main(int argc, char *argv[])
             stop = true;
         }
 
-        q8.write_all();
+        if (!q8.write_all()){
+            std::cout <<"FUCK" << std::endl;
+        }
         
         // store data
         std::vector<double> data_line;
@@ -187,6 +192,8 @@ int main(int argc, char *argv[])
 
     q8.disable();
     q8.close();
+
+    disable_realtime();
 
     std::vector<std::string> header = {"Time (s)",
                                        "EFE pos (rad)", "FPS pos (rad)", "WFE pos (rad)", "WRU pos (rad)",
