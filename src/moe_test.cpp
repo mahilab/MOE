@@ -40,13 +40,13 @@ int main(int argc, char *argv[])
     }
 
     // EXPERIMENT PARAMETERS
-    vector<bool> active_joints = {false, false, true, false};
+    vector<bool> active_joints = {true, true, true, true};
 
     // trajectory parameters -> desired_pos = traj_amplitude*sin(2.0*PI*traj_frequency*t.as_seconds())
-    vector<double> traj_frequencies = {         0.5,           0.45,           0.37,           0.6}; // Hz
-    vector<double> traj_amplitudes =  { 25.0*DEG2RAD,  20.0*DEG2RAD,  20.0*DEG2RAD,  15.0*DEG2RAD}; // amplitude in radians
+    vector<double> traj_frequencies = {         0.28,           0.45,           0.37,           0.6}; // Hz
+    vector<double> traj_amplitudes =  { 20.0*DEG2RAD,  20.0*DEG2RAD,  20.0*DEG2RAD,  15.0*DEG2RAD}; // amplitude in radians
     vector<double> traj_offsets =     {-35.0*DEG2RAD, -90.0*DEG2RAD, -70.0*DEG2RAD, -35.0*DEG2RAD}; // sinwave offset
-    Time traj_time = 20_s;
+    Time traj_time = 300_s;
     Time go_to_start_time = 5_s;
     // END EXPERIMENT PARAMETERS
 
@@ -82,6 +82,9 @@ int main(int argc, char *argv[])
         // initialize encoders
         q8.encoder.units[encoder_channel[i]] = (2.0*PI/encoder_cprs[i])*gear_ratios[i];
     }
+
+    q8.DO.enable_values[7]  = TTL_LOW;
+    q8.DO.disable_values[7] = TTL_HIGH;
 
     // pd controllers used for each joint
     vector<PdController> joint_controllers;
@@ -140,8 +143,8 @@ int main(int argc, char *argv[])
             desired_vel[i] = 0.0;
 
             // calc desired torque
-            // desired_trq[i] = joint_controllers[moe_joint].calculate(desired_pos[i],current_pos[i],desired_vel[i],current_vel[i]);  
-            desired_trq[i] = 0.1*sin(2.0*PI*1.0*(t-go_to_start_time).as_seconds());
+            desired_trq[i] = joint_controllers[moe_joint].calculate(desired_pos[i],current_pos[i],desired_vel[i],current_vel[i]);  
+            // desired_trq[i] = 0.1*sin(2.0*PI*1.0*(t-go_to_start_time).as_seconds());
 
 
             // compute the voltage out based on desired torque
@@ -164,6 +167,7 @@ int main(int argc, char *argv[])
 
         if (!q8.write_all()){
             std::cout <<"FUCK" << std::endl;
+            stop = true;
         }
         
         // store data
@@ -189,6 +193,10 @@ int main(int argc, char *argv[])
     for (auto i = 0; i < num_active_dof; i++){
         q8.DO[active_map[i]] = TTL_LOW;
     }
+
+    q8.DO[7] = TTL_HIGH;
+    sleep(1_ms);
+    
 
     q8.disable();
     q8.close();

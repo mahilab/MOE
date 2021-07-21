@@ -28,7 +28,7 @@ int main(int arc, char const *argv[])
     double traj_amplitude = 25 * DEG2RAD; // amplitude in radians
     double traj_offset = 0*DEG2RAD; // sinwave
 
-    moe_joint_enum active_joint = wrist_ru;
+    moe_joint_enum active_joint = forearm_ps;
     Time traj_time = 10_s;
     // END EXPERIMENT PARAMETERS
 
