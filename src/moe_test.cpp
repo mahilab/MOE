@@ -43,10 +43,10 @@ int main(int argc, char *argv[])
     vector<bool> active_joints = {true, true, true, true};
 
     // trajectory parameters -> desired_pos = traj_amplitude*sin(2.0*PI*traj_frequency*t.as_seconds())
-    vector<double> traj_frequencies = {         0.28,           0.45,           0.37,           0.6}; // Hz
+    vector<double> traj_frequencies = {         0.28,          0.45,          0.37,           0.6}; // Hz
     vector<double> traj_amplitudes =  { 20.0*DEG2RAD,  20.0*DEG2RAD,  20.0*DEG2RAD,  15.0*DEG2RAD}; // amplitude in radians
     vector<double> traj_offsets =     {-35.0*DEG2RAD, -90.0*DEG2RAD, -70.0*DEG2RAD, -35.0*DEG2RAD}; // sinwave offset
-    Time traj_time = 300_s;
+    Time traj_time = 100_s;
     Time go_to_start_time = 5_s;
     // END EXPERIMENT PARAMETERS
 
