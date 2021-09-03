@@ -29,7 +29,7 @@ namespace moe {
         pos_limits_min_{0, 0, 0, 0},
         pos_limits_max_{0, 0, 0, 0},
         vel_limits_{      180*DEG2RAD, 200*DEG2RAD,  200*DEG2RAD,  200*DEG2RAD},
-        joint_torque_limits{      4.0,         4.0,          4.0,          4.0},
+        joint_torque_limits{      8.0,         4.0,          2.0,          2.0},
         kin_friction_{0, 0, 0, 0}
         { }
 

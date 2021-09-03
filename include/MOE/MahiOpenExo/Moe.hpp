@@ -11,7 +11,6 @@
 #include <Eigen/Dense>
 #include <Eigen/LU>
 #include <Eigen/StdVector>
-#include <MOE/Control/Trajectory.hpp>
 
 namespace moe {
     /// Class for controlling the Mahi Open Exo
@@ -123,6 +122,7 @@ namespace moe {
     /////////////////// PUBLIC FACING ROBOT STATE ACCESS ///////////////////
 
     public:
+        void update();
         /// get vector of all joint positions
         std::vector<double> get_joint_positions() const { return m_joint_positions;};
         /// get single joint position

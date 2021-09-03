@@ -22,7 +22,7 @@ namespace moe {
             auto ms_trq = std::make_shared<MelShare>(config_vr.m_torque_ms_names[i]);
             auto ms_pos = std::make_shared<MelShare>(config_vr.m_posvel_ms_names[i]);
 
-            auto joint = std::make_shared<JointVirtual>("moe_joint_" + std::to_string(i+1),
+            auto joint = std::make_shared<JointVirtual>("moe_joint_" + std::to_string(i),
                                                 std::array<double, 2>({ params_.pos_limits_min_[i] , params_.pos_limits_max_[i]}),
                                                 params_.vel_limits_[i],
                                                 params_.joint_torque_limits[i],

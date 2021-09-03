@@ -67,6 +67,13 @@ namespace moe {
         stop = true;
     }
 
+    void Moe::update(){
+        for (size_t i = 0; i < n_j; i++){
+            m_joint_positions[i] = moe_joints[i]->get_position();
+            m_joint_velocities[i] = moe_joints[i]->get_velocity();
+        }
+    }
+
     ///////////////////////// SMOOTH REFERENCE TRAJECTORY CLASS AND INSTANCES /////////////////////////
 
     Moe::SmoothReferenceTrajectory::SmoothReferenceTrajectory(std::vector<double> speed, std::vector<double> ref_pos, std::vector<bool> active_dofs) :
@@ -143,7 +150,7 @@ namespace moe {
 
         size_t num_active = 0;
 
-        for (size_t i = 0; i < 5; i++){
+        for (size_t i = 0; i < n_j; i++){
             // if the dof is active, calculate the torque to use, else it remains 0
             if (ref.m_active_dofs[i]){
                 // calculate the new reference position

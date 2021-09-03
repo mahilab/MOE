@@ -40,8 +40,6 @@ FetchContent_MakeAvailable(mahi-com)
 add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -D_WINSOCK_DEPRECATED_NO_WARNINGS)
 
 set(SRC_MOE
-    src/MOE/Control/Trajectory.cpp
-    src/MOE/Control/Waypoint.cpp
     src/MOE/MahiOpenExo/Joint.cpp
     src/MOE/MahiOpenExo/JointHardware.cpp
     src/MOE/MahiOpenExo/MahiOpenExoHardware.cpp
