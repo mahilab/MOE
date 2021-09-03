@@ -57,11 +57,12 @@ namespace moe {
     }
 
     void Moe::calibrate(volatile std::atomic<bool>& stop) {
-        // enable DAQ
+        // to use this function, move all joints to their maximum value and run
         daq_enable();
-        std::vector<int32> encoder_offsets = { 0, 0, 0, 0};
+        // std::vector<int32> encoder_offsets = { 0, 0, 0, 0};
         for (int i = 0; i < n_j; i++) {
-            daq_encoder_write(i+1, encoder_offsets[i]);
+            // position (rad) / (2*pi [rad/rev]) * resolution [counts/rev] / eta 
+            daq_encoder_write(i, params_.pos_limits_max_[i] / (2*PI) * params_.encoder_res_[i] / params_.eta_[i]);
         }
         daq_disable();
         stop = true;
@@ -266,6 +267,138 @@ namespace moe {
     }
 
     void Moe::calibrate_auto(volatile std::atomic<bool>& stop){
+
+        // destinations for the joints after setting calibration
+        std::array<double,n_j> neutral_points = {0, 0, 0, 0};
         
+        // create needed variables
+        std::vector<double> zeros = { 0, 0, 0, 0}; // determined zero positions for each joint
+        std::array<int, n_j> dir = { 1 , 1, 1, -1 };  // direction to rotate each joint
+        uint32 calibrating_joint = 0;               // joint currently calibrating
+        bool returning = false;                     // bool to track if calibrating joint is return to zero
+        double pos_ref = 0;                         // desired position
+
+        // std::array<double, 5> vel_ref = {30 * DEG2RAD, 30 * DEG2RAD, 0.01, 0.01, 0.01}; // desired velocities
+        double vel_ref = 20 * DEG2RAD;
+
+        std::vector<double> stored_positions;  // stores past positions
+        stored_positions.reserve(100000);
+
+        std::array<double, n_j> sat_torques = { 2.0, 2.0, 1.0, 1.0}; // temporary saturation torques
+
+        Time timeout = seconds(60); // max amout of time we will allow calibration to occur for
+
+        // enable DAQs, zero encoders, and start watchdog
+        daq_enable();
+        for (size_t i = 0; i < n_j; i++){
+            daq_encoder_write((int32)i,0);
+        }
+        daq_watchdog_start();
+
+        // enable MEII
+        enable();
+
+        daq_read_all();
+        update();
+
+        zeros = get_joint_positions();
+        pos_ref = zeros[calibrating_joint];
+
+        // start the clock
+        Timer timer(milliseconds(1), Timer::WaitMode::Hybrid);
+        
+        // start the calibration control loop
+        while (!stop && timer.get_elapsed_time() < timeout) {
+
+            // read and reload DAQs
+            daq_read_all();
+            update();
+            daq_watchdog_kick();
+
+                // iterate over all joints
+            for (std::size_t i = 0; i < n_j; i++) {
+
+                // get positions and velocities
+                double pos_act = get_joint_position(i);
+                double vel_act = get_joint_velocity(i);
+
+                double torque = 0;
+                if (i == calibrating_joint) {
+                    if (!returning) {
+
+                        // calculate torque req'd to move the calibrating joint forward at constant speed
+                        pos_ref += dir[i] * vel_ref * timer.get_period().as_seconds();
+                        torque = joint_pd_controllers_[i].calculate(pos_ref, pos_act, 0, vel_act);
+                        torque = clamp(torque, sat_torques[i]);
+
+                        // check if the calibrating joint is still moving
+                        stored_positions.push_back(pos_act);
+                        bool moving = true;
+                        if (stored_positions.size() > 100) {
+                            moving = false;
+                            for (size_t j = stored_positions.size() - 100; j < stored_positions.size(); j++) {
+                                moving = stored_positions[j] != stored_positions[j - 1];
+                                if (moving)
+                                    break;
+                            }
+                        }
+
+                        // if it's not moving, it's at a hardstop so record the position and deduce the zero location
+                        if (!moving) {
+                            daq_encoder_write((int)i,params_.pos_limits_max_[i] / (2*PI) * params_.encoder_res_[i] / params_.eta_[i]);
+                            returning = true;
+                            // update the reference position to be the current one
+                            pos_ref = get_joint_position(i);
+                        }
+                    }
+
+                    else {
+                        // calculate torque req'd to retur the calibrating joint back to zero
+                        pos_ref -= dir[i] * vel_ref *  timer.get_period().as_seconds();
+                        torque = joint_pd_controllers_[i].calculate(pos_ref, pos_act, 0, vel_act);
+                        torque = clamp(torque, sat_torques[i]);
+
+
+                        if (dir[i] * pos_ref <= dir[i] * neutral_points[i]) {
+                            // reset for the next joint
+                            calibrating_joint += 1;
+                            pos_ref = zeros[calibrating_joint];
+                            returning = false;
+                            LOG(Info) << "Joint " << moe_joints[i]->get_name() << " calibrated";
+                        }
+                    }
+                }
+                else {
+                    // lock all other joints at their zero positions
+                    if (i > calibrating_joint){
+                        torque = joint_pd_controllers_[i].calculate(zeros[i], pos_act, 0, vel_act);
+                    }
+                    else{
+                        torque = joint_pd_controllers_[i].calculate(neutral_points[i], pos_act, 0, vel_act);
+                    }
+                    torque = clamp(torque, sat_torques[i]);
+                }
+                // print("joint {} - pos: {}, ref: {}, torque: {}", i, pos_act, pos_ref, torque);
+                moe_joints[i]->set_torque(torque);
+            }
+            
+            // write all DAQs
+            daq_write_all();
+
+            // check joint velocity limits
+            if (any_velocity_limit_exceeded() || any_torque_limit_exceeded()) {
+                stop = true;
+                break;
+            }
+
+            // wait the clock
+            timer.wait();
+        }
+
+        // disable MEII
+        disable();
+
+        // disable DAQ
+        daq_disable();
     }
 }

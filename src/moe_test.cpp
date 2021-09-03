@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     }
 
     // EXPERIMENT PARAMETERS
-    vector<bool> active_joints = {true, true, true, true};
+    vector<bool> active_joints = {true, true, true, false};
 
     // trajectory parameters -> desired_pos = traj_amplitude*sin(2.0*PI*traj_frequency*t.as_seconds())
     vector<double> traj_frequencies = {         0.28,          0.45,          0.37,           0.6}; // Hz

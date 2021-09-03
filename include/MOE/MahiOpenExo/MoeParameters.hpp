@@ -19,19 +19,19 @@ namespace moe {
     struct MoeParameters{
         /// Default constructor.
         MoeParameters() :
-                            // Joint 0      Joint 1       Joint 2      Joint 3      
-        kt_{                    0.127,      0.0603,       0.0603,       0.0538},
-        motor_cont_limits_{0, 0, 0, 0},
-        motor_peak_limits_{0, 0, 0, 0},
-        motor_i2t_times_{seconds(0.0), seconds(0.0), seconds(0.0), seconds(0.0)},
-        eta_{                0.42/4.5, 0.4706/8.75,   0.4735/9.0,  0.2210/6.00},
-        encoder_res_{           500*4,         500,          500,          500},
-        pos_limits_min_{0, 0, 0, 0},
-        pos_limits_max_{0, 0, 0, 0},
-        vel_limits_{      180*DEG2RAD, 200*DEG2RAD,  200*DEG2RAD,  200*DEG2RAD},
-        joint_torque_limits{      8.0,         4.0,          2.0,          2.0},
-        kin_friction_{0, 0, 0, 0}
+        //                              Joint 0             Joint 1             Joint 2             Joint 3      
+        kt_                {              0.127,             0.0603,             0.0603,             0.0538}, // Nm/A
+        motor_cont_limits_ {                  5,                  5,                  5,                  5}, // Nm
+        motor_peak_limits_ {                  0,                  0,                  0,                  0}, // Nm
+        motor_i2t_times_   {       seconds(0.0),       seconds(0.0),       seconds(0.0),       seconds(0.0)}, // s
+        eta_               {           0.42/4.5,        0.4706/8.75,         0.4735/9.0,        0.2210/6.00}, // Nm/Nm
+        encoder_res_       {                500,                500,                500,                500}, // counts/rev
+        pos_limits_min_    { -73.6285 * DEG2RAD, -89.8249 * DEG2RAD, -63.2490 * DEG2RAD, -42.9322 * DEG2RAD}, // radians
+        pos_limits_max_    { +28.6283 * DEG2RAD, +89.8249 * DEG2RAD, +68.2490 * DEG2RAD, +30.9087 * DEG2RAD}, // radians
+        vel_limits_        {      180 * DEG2RAD,      200 * DEG2RAD,      200 * DEG2RAD,      200 * DEG2RAD}, // radians/s
+        joint_torque_limits{                8.0,                4.0,                2.0,                2.0}  // Nm
         { }
+        // position limits pulled from solidworks 9/3/2021. RU positive value needs to be checked eperimentally
 
     /// motor torque constants [Nm/A]
     std::array<double, 4> kt_;
@@ -53,7 +53,5 @@ namespace moe {
     std::array<double, 4> vel_limits_;
     /// joint torque limits [Nm]
     std::array<double, 4> joint_torque_limits;
-    /// joint kinetic friction [Nm]
-    std::array<double, 4> kin_friction_;
     };
 }
