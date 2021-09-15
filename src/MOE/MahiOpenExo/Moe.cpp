@@ -267,7 +267,7 @@ namespace moe {
     }
 
     void Moe::calibrate_auto(volatile std::atomic<bool>& stop){
-
+        mahi::util::print("Begining Calibration");
         // destinations for the joints after setting calibration
         std::array<double,n_j> neutral_points = {0, 0, 0, 0};
         
@@ -284,7 +284,7 @@ namespace moe {
         std::vector<double> stored_positions;  // stores past positions
         stored_positions.reserve(100000);
 
-        std::array<double, n_j> sat_torques = { 2.0, 2.0, 1.0, 1.0}; // temporary saturation torques
+        std::array<double, n_j> sat_torques = { 4.0, 4.0, 2.0, 2.0}; // temporary saturation torques
 
         Time timeout = seconds(60); // max amout of time we will allow calibration to occur for
 
@@ -330,6 +330,7 @@ namespace moe {
                         pos_ref += dir[i] * vel_ref * timer.get_period().as_seconds();
                         torque = joint_pd_controllers_[i].calculate(pos_ref, pos_act, 0, vel_act);
                         torque = clamp(torque, sat_torques[i]);
+                        // mahi::util::print("pos_ref: {}, torque: {}",pos_ref,torque);
 
                         // check if the calibrating joint is still moving
                         stored_positions.push_back(pos_act);

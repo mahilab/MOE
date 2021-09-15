@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
     WayPoint neutral_point = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
     WayPoint bottom_elbow  = WayPoint(Time::Zero, {-65 * DEG2RAD,  30 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
     WayPoint top_elbow     = WayPoint(Time::Zero, { -5 * DEG2RAD, -30 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
-    WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 12 * DEG2RAD});
+    WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 15 * DEG2RAD});
 
     // construct timer in hybrid mode to avoid using 100% CPU
     Timer timer(Ts, Timer::Hybrid);
@@ -203,7 +203,7 @@ int main(int argc, char* argv[]) {
             ref[0] = neutral_point.get_pos()[0];
             ref[1] = neutral_point.get_pos()[1];
             ref[2] = 60.0 * DEG2RAD * sin(2.0 * PI * ref_traj_clock.get_elapsed_time() / state_times[wrist_circle]);
-            ref[3] = 60.0 * DEG2RAD * cos(2.0 * PI * ref_traj_clock.get_elapsed_time() / state_times[wrist_circle]);
+            ref[3] = 30.0 * DEG2RAD * cos(2.0 * PI * ref_traj_clock.get_elapsed_time() / state_times[wrist_circle]) - 15.0 * DEG2RAD;
         }
 
         // constrain trajectory to be within range
