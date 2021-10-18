@@ -173,16 +173,15 @@ namespace moe {
 
         if(std::count(active.begin(), active.end(), true) != ref.size()){
             LOG(Error) << "Size of 'ref' param must equal number of true values in 'active' param (default 4). Commanding 0 torques.";
-            return command_torques;
         }
         else if(size(active) != 4){
             LOG(Error) << "Size of 'active' param must be 4. Commanding 0 torques.";
-            return command_torques;
         }
-
-        for (std::size_t i = 0; i < n_j; ++i) {
-            if (active[i]){
-                command_torques[i] = joint_pd_controllers_[i].calculate(ref[i], m_joint_positions[i], 0, m_joint_velocities[i]);
+        else{
+            for (std::size_t i = 0; i < n_j; ++i) {
+                if (active[i]){
+                    command_torques[i] = joint_pd_controllers_[i].calculate(ref[i], m_joint_positions[i], 0, m_joint_velocities[i]);
+                }
             }
         }
         set_raw_joint_torques(command_torques);
@@ -197,6 +196,24 @@ namespace moe {
 
         for (auto it = moe_joints.begin(); it != moe_joints.end(); ++it) {
             (*it)->set_torque(new_torques[it - moe_joints.begin()]);
+        }
+    }
+
+    void Moe::set_high_gains(std::vector<bool> active){
+        for (std::size_t i=0; i<n_j; ++i) {
+            if (active[i]){
+                joint_pd_controllers_[i].kp = gains_P[i]*5.0;
+                joint_pd_controllers_[i].kd = gains_D[i]*5.0;
+            }
+        }
+    }
+
+    void Moe::set_normal_gains(std::vector<bool> active){
+        for (std::size_t i=0; i<n_j; ++i) {
+            if (active[i]){
+                joint_pd_controllers_[i].kp = gains_P[i];
+                joint_pd_controllers_[i].kd = gains_D[i];
+            }
         }
     }
 
