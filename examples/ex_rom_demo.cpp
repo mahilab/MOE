@@ -180,6 +180,9 @@ int main(int argc, char* argv[]) {
     // trajectory following
     LOG(Info) << "Starting Movement.";
 
+    std::vector<std::vector<double>> data;
+    std::vector<double> data_line;
+
     //initialize kinematics
     moe->daq_read_all();
     moe->update();
@@ -249,6 +252,13 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        data_line.clear();
+        data_line.push_back(t);
+        for (auto &&i : ref) data_line.push_back(i);
+        for (auto &&i : moe->get_joint_positions()) data_line.push_back(i);
+        data.push_back(data_line);
+        
+
         // kick watchdog
         // if (!moe->daq_watchdog_kick() || moe->any_limit_exceeded()) {
         //     stop = true;
@@ -266,6 +276,18 @@ int main(int argc, char* argv[]) {
         // wait for remainder of sample period
         t = timer.wait().as_seconds();
     }
+
+    command_torques = {0.0, 0.0, 0.0, 0.0, 0.0};
+    moe->set_raw_joint_torques(command_torques);
+    moe->daq_write_all();
+
+
+    std::vector<std::string> header = {"Time (s)", 
+                                       "EFE ref (rad)", "FPS ref (rad)", "WFE ref (rad)", "WRU ref (rad)",
+                                       "EFE act (rad)", "FPS act (rad)", "WFE act (rad)", "WRU act (rad)"};
+
+    csv_write_row("data/rom_demo_results.csv",header);
+    csv_append_rows("data/rom_demo_results.csv",data);
     
     moe->disable();
     moe->daq_disable();
