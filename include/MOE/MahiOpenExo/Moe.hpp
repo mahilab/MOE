@@ -96,6 +96,10 @@ namespace moe {
         std::vector<double> set_smooth_pos_ctrl_torques(SmoothReferenceTrajectory& ref, mahi::util::Time current_time);
         /// sets the joint torques based on a reference given to the function
         std::vector<double> set_pos_ctrl_torques(std::vector<double> ref, std::vector<bool> active = std::vector<bool>(n_j,true));
+        /// sets the PD control gains to a high value (5x)
+        void set_high_gains(std::vector<bool> active = std::vector<bool>(n_j,true));
+        /// sets the PD control gains to their normal value
+        void set_normal_gains(std::vector<bool> active = std::vector<bool>(n_j,true));
         /// sets the joint torques to the input torque
         void set_raw_joint_torques(std::vector<double> new_torques);
 
@@ -144,23 +148,27 @@ namespace moe {
     /////////////////// ROBOT PD CONTROLLERS ///////////////////
 
     public:
-        double elbow_P = 125.0; // from common.hpp from testing
-        double elbow_D = 1.75; // from common.hpp from testing
-        double forearm_P = 25.0; // from common.hpp from testing
-        double forearm_D = 1.15; // from common.hpp from testing
-        double wrist_FE_P = 20.0; // from common.hpp from testing
-        double wrist_FE_D = 1.0; // from common.hpp from testing
-        double wrist_RU_P = 20.0; // from common.hpp from testing
-        double wrist_RU_D = 0.25; // from common.hpp from testing
+        ////////////////////////////   Elbow     forearm PS      wrist FE         wrist RU
+        std::vector<double> gains_P = {125.0,          25.0,         20.0,            20.0};
+        std::vector<double> gains_D = { 1.75,          1.15,          1.0,            0.25};
+        // double elbow_P = 125.0; // from common.hpp from testing
+        // double elbow_D = 1.75; // from common.hpp from testing
+        // double forearm_P = 25.0; // from common.hpp from testing
+        // double forearm_D = 1.15; // from common.hpp from testing
+        // double wrist_FE_P = 20.0; // from common.hpp from testing
+        // double wrist_FE_D = 1.0; // from common.hpp from testing
+        // double wrist_RU_P = 20.0; // from common.hpp from testing
+        // double wrist_RU_D = 0.25; // from common.hpp from testing
 
         std::array<mahi::robo::PdController, n_j> joint_pd_controllers_ = {
             {
-                mahi::robo::PdController(elbow_P,elbow_D),
-                mahi::robo::PdController(forearm_P,forearm_D),
-                mahi::robo::PdController(wrist_FE_P,wrist_FE_D),
-                mahi::robo::PdController(wrist_RU_P,wrist_RU_D)
+                mahi::robo::PdController(gains_P[0],gains_D[0]),
+                mahi::robo::PdController(gains_P[1],gains_D[1]),
+                mahi::robo::PdController(gains_P[2],gains_D[2]),
+                mahi::robo::PdController(gains_P[3],gains_D[3])
             }
         };
+
 
     //////////////// MISC USEFUL UTILITY FUNCTIONS ////////////////
     
