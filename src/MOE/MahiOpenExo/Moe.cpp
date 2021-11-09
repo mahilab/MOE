@@ -62,7 +62,8 @@ namespace moe {
         // std::vector<int32> encoder_offsets = { 0, 0, 0, 0};
         for (int i = 0; i < n_j; i++) {
             // position (rad) / (2*pi [rad/rev]) * resolution [counts/rev] / eta 
-            daq_encoder_write(i, params_.pos_limits_max_[i] / (2*PI) * params_.encoder_res_[i] / params_.eta_[i]);
+            daq_encoder_write(i, params_.pos_limits_max_[i] / (2*PI) * params_.encoder_res_[i] / params_.eta_[i]*4);
+            // std::cout << "Joint " << i << ": " << params_.pos_limits_max_[i] / (2*PI) * params_.encoder_res_[i] / params_.eta_[i] << "\n";
         }
         daq_disable();
         stop = true;
@@ -286,7 +287,7 @@ namespace moe {
     void Moe::calibrate_auto(volatile std::atomic<bool>& stop){
         mahi::util::print("Begining Calibration");
         // destinations for the joints after setting calibration
-        std::array<double,n_j> neutral_points = {0, 0, 0, 0};
+        std::array<double,n_j> neutral_points = {-35*DEG2RAD, 0, 0, 0};
         
         // create needed variables
         std::vector<double> zeros = { 0, 0, 0, 0}; // determined zero positions for each joint
@@ -294,6 +295,8 @@ namespace moe {
         uint32 calibrating_joint = 0;               // joint currently calibrating
         bool returning = false;                     // bool to track if calibrating joint is return to zero
         double pos_ref = 0;                         // desired position
+        
+        std::array<double,n_j> multiplier = {4.0, 4.0, 4.0, 4.0};
 
         // std::array<double, 5> vel_ref = {30 * DEG2RAD, 30 * DEG2RAD, 0.01, 0.01, 0.01}; // desired velocities
         double vel_ref = 20 * DEG2RAD;
@@ -301,7 +304,8 @@ namespace moe {
         std::vector<double> stored_positions;  // stores past positions
         stored_positions.reserve(100000);
 
-        std::array<double, n_j> sat_torques = { 4.0, 4.0, 2.0, 2.0}; // temporary saturation torques
+        // std::array<double, n_j> sat_torques = { 4.0, 4.0, 2.0, 2.0}; // temporary saturation torques
+        std::array<double, n_j> sat_torques = { 4.0, 2.0, 2.0, 1.0}; // temporary saturation torques
 
         Time timeout = seconds(60); // max amout of time we will allow calibration to occur for
 
@@ -310,7 +314,7 @@ namespace moe {
         for (size_t i = 0; i < n_j; i++){
             daq_encoder_write((int32)i,0);
         }
-        daq_watchdog_start();
+        // daq_watchdog_start();
 
         // enable MEII
         enable();
@@ -330,7 +334,7 @@ namespace moe {
             // read and reload DAQs
             daq_read_all();
             update();
-            daq_watchdog_kick();
+            // daq_watchdog_kick();
 
                 // iterate over all joints
             for (std::size_t i = 0; i < n_j; i++) {
@@ -363,7 +367,7 @@ namespace moe {
 
                         // if it's not moving, it's at a hardstop so record the position and deduce the zero location
                         if (!moving) {
-                            daq_encoder_write((int)i,params_.pos_limits_max_[i] / (2*PI) * params_.encoder_res_[i] / params_.eta_[i]);
+                            daq_encoder_write((int)i,params_.pos_limits_max_[i] / (2*PI) * params_.encoder_res_[i] / params_.eta_[i] *multiplier[i]);
                             returning = true;
                             // update the reference position to be the current one
                             pos_ref = get_joint_position(i);
@@ -378,11 +382,13 @@ namespace moe {
 
 
                         if (dir[i] * pos_ref <= dir[i] * neutral_points[i]) {
+                            std::cout << pos_ref << std::endl;
                             // reset for the next joint
                             calibrating_joint += 1;
                             pos_ref = zeros[calibrating_joint];
                             returning = false;
                             LOG(Info) << "Joint " << moe_joints[i]->get_name() << " calibrated";
+                            if (calibrating_joint == n_j) stop = true;
                         }
                     }
                 }
@@ -402,7 +408,7 @@ namespace moe {
             
             // write all DAQs
             daq_write_all();
-
+            // daq_watchdog_kick();
             // check joint velocity limits
             if (any_velocity_limit_exceeded() || any_torque_limit_exceeded()) {
                 stop = true;

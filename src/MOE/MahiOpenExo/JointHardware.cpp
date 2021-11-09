@@ -33,7 +33,8 @@ JointHardware::JointHardware(const std::string &name,
     m_amp_gain(amp_gain),
     m_motor_enable_handle(motor_enable_handle),
     m_motor_enable_value(motor_enable_value),
-    m_amp_write_handle(amp_write_handle)
+    m_amp_write_handle(amp_write_handle),
+    butt(2,hertz(20),hertz(1000))
     {
 
     }
@@ -58,6 +59,13 @@ double JointHardware::get_position() {
 }
 
 double JointHardware::get_velocity() {
+    if (software_velocity){
+        static double pos_last = get_position();
+        auto curr_pos = get_position();
+        double velocity_unfiltered = (curr_pos - pos_last)/0.001;
+        pos_last = curr_pos;
+        return butt.update(velocity_unfiltered);
+    }
     return m_velocity_transmission*m_velocity_sensor;
 }
 
@@ -73,8 +81,11 @@ void JointHardware::set_torque(double new_torque) {
         }
         double motor_torque = m_torque * m_actuator_transmission;             // (Nm) * (Nm / Nm) = Nm
         double command_current = motor_torque/m_motor_kt;                     // (Nm) / (Nm / A)  = A
-        double command_voltage = m_limiter.limit(command_current)/m_amp_gain; // (A)  / (A / V)   = V
+        double command_voltage = command_current/m_amp_gain; // (A)  / (A / V)   = V
         m_amp_write_handle.set_volts(command_voltage);
+        // std::cout << "m_torque: " << m_torque << ", ";
+        // std::cout << "command_current: " << command_current << ", ";
+        // std::cout << "command_voltage: " << command_voltage << std::endl;
     }
 }
                 

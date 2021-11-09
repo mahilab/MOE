@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
 
         MoeConfigurationHardware config_hw(*daq); 
 
-        std::vector<TTL> idle_values(8,TTL_HIGH);
+        std::vector<TTL> idle_values(8,TTL_LOW);
         daq->DO.enable_values.set({0,1,2,3,4,5,6,7},idle_values);
         daq->DO.disable_values.set({0,1,2,3,4,5,6,7},idle_values);
         daq->DO.expire_values.write({0,1,2,3,4,5,6,7},idle_values);   
@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
 
     // calibrate - manually zero the encoders (right arm supinated)
     if (result.count("calibrate") > 0) {
-        moe->calibrate_auto(stop);
+        moe->calibrate(stop);
         LOG(Info) << "MAHI Exo-II encoders calibrated.";
         return 0;
     }
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
     WayPoint neutral_point = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
     WayPoint bottom_elbow  = WayPoint(Time::Zero, {-65 * DEG2RAD,  30 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
     WayPoint top_elbow     = WayPoint(Time::Zero, { -5 * DEG2RAD, -30 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
-    WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 15 * DEG2RAD});
+    WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 25 * DEG2RAD});
 
     // construct timer in hybrid mode to avoid using 100% CPU
     Timer timer(Ts, Timer::Hybrid);
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
     Time traj_length;
     WayPoint dummy_waypoint = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
     MinimumJerk mj(mj_Ts, dummy_waypoint, neutral_point.set_time(state_times[to_neutral_0]));
-    std::vector<double> traj_max_diff = { 50 * DEG2RAD, 50 * DEG2RAD, 35 * DEG2RAD, 35 * DEG2RAD};
+    std::vector<double> traj_max_diff = { 60 * DEG2RAD, 60 * DEG2RAD, 100 * DEG2RAD, 60 * DEG2RAD};
 	mj.set_trajectory_params(Trajectory::Interp::Linear, traj_max_diff);
     Clock ref_traj_clock;
 
@@ -205,8 +205,8 @@ int main(int argc, char* argv[]) {
         else {
             ref[0] = neutral_point.get_pos()[0];
             ref[1] = neutral_point.get_pos()[1];
-            ref[2] = 60.0 * DEG2RAD * sin(2.0 * PI * ref_traj_clock.get_elapsed_time() / state_times[wrist_circle]);
-            ref[3] = 30.0 * DEG2RAD * cos(2.0 * PI * ref_traj_clock.get_elapsed_time() / state_times[wrist_circle]) - 15.0 * DEG2RAD;
+            ref[2] = 45.0 * DEG2RAD * sin(2.0 * PI * ref_traj_clock.get_elapsed_time() / state_times[wrist_circle]);
+            ref[3] = 30.0 * DEG2RAD * cos(2.0 * PI * ref_traj_clock.get_elapsed_time() / state_times[wrist_circle]) - 5.0 * DEG2RAD;
         }
 
         // constrain trajectory to be within range
@@ -289,8 +289,8 @@ int main(int argc, char* argv[]) {
     csv_write_row("data/rom_demo_results.csv",header);
     csv_append_rows("data/rom_demo_results.csv",data);
     
-    moe->disable();
     moe->daq_disable();
+    moe->disable();
 
     disable_realtime();
 

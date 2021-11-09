@@ -2,6 +2,7 @@
 
 #include <MOE/MahiOpenExo/Joint.hpp>
 #include <Mahi/Daq/Handle.hpp>
+#include <Mahi/Util/Math/Butterworth.hpp>
 
 namespace moe {
 //==============================================================================
@@ -59,6 +60,9 @@ private:
     mahi::daq::DOHandle m_motor_enable_handle; // DO channel used to control if motor is enabled/disabled
     mahi::daq::TTL m_motor_enable_value; // Digital value to set for to enable motor through the amplifier
     mahi::daq::AOHandle m_amp_write_handle; // AO channel to write to for setting desired torque values
+
+    bool software_velocity = false;
+    mahi::util::Butterworth butt;
 };
 
 } // namespace moe

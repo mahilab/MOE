@@ -7,7 +7,7 @@ using mahi::util::DEG2RAD;
 using std::vector;
                                   //  Joint 0      Joint 1      Joint 2      Joint 3
 vector<double>     gear_ratios = {   0.42/4.5, 0.4706/8.75,  0.4735/9.0, 0.2210/6.00}; // ratio from motor shaft rotation to joint rotation [unitless]
-vector<double>    encoder_cprs = {      500*4,         500,         500,         500}; // counts per revolution of encoders on motors
+vector<double>    encoder_cprs = {        500,         500,         500,         500}; // counts per revolution of encoders on motors
 vector<bool>       switch_dirs = {      false,       false,       false,       false}; // Decides whether or not to switch directions (applied to encoder)
 vector<double>             Kts = {      0.127,      0.0603,      0.0603,      0.0538}; // Motor Kt vals [Nm/A]
 vector<double>      amp_ratios = {        0.4,         0.2,         0.2,         0.2}; // amp per volt ratio set in the driver software [A/V]

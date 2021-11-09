@@ -28,7 +28,7 @@ namespace moe {
                                  const std::vector<mahi::daq::ChanNum> encoder_channels = {0,1,2,3},
                                  const std::vector<mahi::daq::ChanNum> enable_channels = {0,1,2,3},
                                  const std::vector<mahi::daq::ChanNum> current_write_channels = {0,1,2,3},
-                                 const std::vector<mahi::daq::TTL>     enable_values = std::vector<mahi::daq::TTL>(4,mahi::daq::TTL_LOW),
+                                 const std::vector<mahi::daq::TTL>     enable_values = std::vector<mahi::daq::TTL>(4,mahi::daq::TTL_HIGH),
                                  const std::vector<double>             amp_gains = {0.4, 0.2, 0.2, 0.2}):
             m_daq(daq),
             m_encoder_channels(encoder_channels),
