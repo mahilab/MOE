@@ -367,10 +367,11 @@ namespace moe {
 
                         // if it's not moving, it's at a hardstop so record the position and deduce the zero location
                         if (!moving) {
-                            daq_encoder_write((int)i,params_.pos_limits_max_[i] / (2*PI) * params_.encoder_res_[i] / params_.eta_[i] *multiplier[i]);
+                            auto extreme = (dir[i] == 1) ? params_.pos_limits_max_[i] : params_.pos_limits_min_[i];
+                            daq_encoder_write((int)i,extreme / (2*PI) * params_.encoder_res_[i] / params_.eta_[i] *multiplier[i]);
                             returning = true;
                             // update the reference position to be the current one
-                            pos_ref = get_joint_position(i);
+                            pos_ref = extreme;
                         }
                     }
 

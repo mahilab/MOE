@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
 
     // calibrate - manually zero the encoders (right arm supinated)
     if (result.count("calibrate") > 0) {
-        moe->calibrate(stop);
+        moe->calibrate_auto(stop);
         LOG(Info) << "MAHI Exo-II encoders calibrated.";
         return 0;
     }
