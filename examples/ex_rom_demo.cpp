@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
     MelShare ms_ref("ms_ref");
 
     // create ranges for saturating trajectories for safety  MIN            MAX
-    std::vector<std::vector<double>> setpoint_rad_ranges = {{-90 * DEG2RAD, 0 * DEG2RAD},
+    std::vector<std::vector<double>> setpoint_rad_ranges = {{-90 * DEG2RAD, 15 * DEG2RAD},
                                                             {-90 * DEG2RAD, 90 * DEG2RAD},
                                                             {-60 * DEG2RAD, 60 * DEG2RAD},
                                                             {-60 * DEG2RAD, 60 * DEG2RAD}};
@@ -135,8 +135,8 @@ int main(int argc, char* argv[]) {
 
     // waypoints                                   Elbow F/E       Forearm P/S   Wrist F/E     Wrist R/U     LastDoF
     WayPoint neutral_point = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
-    WayPoint bottom_elbow  = WayPoint(Time::Zero, {-65 * DEG2RAD,  30 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
-    WayPoint top_elbow     = WayPoint(Time::Zero, { -5 * DEG2RAD, -30 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
+    WayPoint bottom_elbow  = WayPoint(Time::Zero, {-65 * DEG2RAD,  45 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
+    WayPoint top_elbow     = WayPoint(Time::Zero, {  5 * DEG2RAD, -45 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
     WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 25 * DEG2RAD});
 
     // construct timer in hybrid mode to avoid using 100% CPU
