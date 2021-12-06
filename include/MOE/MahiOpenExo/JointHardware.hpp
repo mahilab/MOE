@@ -28,7 +28,8 @@ public:
                   double amp_gain,
                   mahi::daq::DOHandle motor_enable_handle,
                   mahi::daq::TTL motor_enable_value,
-                  mahi::daq::AOHandle amp_write_handle);
+                  mahi::daq::AOHandle amp_write_handle,
+                  mahi::util::Frequency velocity_filter_sample_rate = mahi::util::hertz(1000));
     
     /// Converts PositionSensor position to Joint Position
     double get_position();

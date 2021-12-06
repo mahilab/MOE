@@ -66,6 +66,8 @@ int main(int argc, char* argv[]) {
     // enable Windows realtime
     enable_realtime();
 
+    Time Ts = milliseconds(1);  // sample period for DAQ
+
     /////////////////////////////////
     // construct and config MOE   //
     /////////////////////////////////
@@ -91,7 +93,6 @@ int main(int argc, char* argv[]) {
         moe = std::make_shared<MahiOpenExoHardware>(config_hw);
     }
 
-    Time Ts = milliseconds(1);  // sample period for DAQ
 
     ////////////////////////////////
 

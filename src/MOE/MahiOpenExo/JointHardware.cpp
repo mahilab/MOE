@@ -23,7 +23,8 @@ JointHardware::JointHardware(const std::string &name,
              double amp_gain,
              mahi::daq::DOHandle motor_enable_handle,
              mahi::daq::TTL motor_enable_value,
-             mahi::daq::AOHandle amp_write_handle):
+             mahi::daq::AOHandle amp_write_handle,
+             mahi::util::Frequency velocity_filter_sample_rate):
     Joint(name,position_limits,velocity_limit,torque_limit,limiter),
     m_position_sensor(position_sensor),
     m_velocity_sensor(velocity_sensor),
@@ -36,7 +37,7 @@ JointHardware::JointHardware(const std::string &name,
     m_motor_enable_handle(motor_enable_handle),
     m_motor_enable_value(motor_enable_value),
     m_amp_write_handle(amp_write_handle),
-    m_velocity_filter(2,100_Hz,1000_Hz),
+    m_velocity_filter(2,100_Hz,velocity_filter_sample_rate),
     m_clock()
     {
 
