@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
         daq = std::make_shared<Q8Usb>();
         daq->open();
 
-        MoeConfigurationHardware config_hw(*daq); 
+        MoeConfigurationHardware config_hw(*daq,VelocityEstimator::Software); 
 
         std::vector<TTL> idle_values(8,TTL_LOW);
         daq->DO.enable_values.set({0,1,2,3,4,5,6,7},idle_values);
@@ -221,7 +221,6 @@ int main(int argc, char* argv[]) {
         }
         else{
             command_torques = moe->set_pos_ctrl_torques(ref);
-            // print("{}", command_torques);
         }
 
         // if enough time has passed, continue to the next state. See to_state function at top of file for details
@@ -256,6 +255,8 @@ int main(int argc, char* argv[]) {
         data_line.push_back(t);
         for (auto &&i : ref) data_line.push_back(i);
         for (auto &&i : moe->get_joint_positions()) data_line.push_back(i);
+        for (auto &&i : moe->get_joint_velocities()) data_line.push_back(i);
+        for (auto &&i : moe->get_joint_command_torques(0)) data_line.push_back(i);
         data.push_back(data_line);
         
 
@@ -284,7 +285,9 @@ int main(int argc, char* argv[]) {
 
     std::vector<std::string> header = {"Time (s)", 
                                        "EFE ref (rad)", "FPS ref (rad)", "WFE ref (rad)", "WRU ref (rad)",
-                                       "EFE act (rad)", "FPS act (rad)", "WFE act (rad)", "WRU act (rad)"};
+                                       "EFE act (rad)", "FPS act (rad)", "WFE act (rad)", "WRU act (rad)",
+                                       "EFE act (rad/s)", "FPS act (rad/s)", "WFE act (rad/s)", "WRU act (rad/s)",
+                                       "EFE trq (Nm)", "FPS trq (Nm)", "WFE trq (Nm)", "WRU trq (Nm)"};
 
     csv_write_row("data/rom_demo_results.csv",header);
     csv_append_rows("data/rom_demo_results.csv",data);

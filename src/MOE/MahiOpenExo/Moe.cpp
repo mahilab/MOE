@@ -71,6 +71,10 @@ namespace moe {
 
     void Moe::update(){
         for (size_t i = 0; i < n_j; i++){
+            // filters velocity if the joint uses software filter (only an option for hardware)
+            moe_joints[i]->filter_velocity();
+
+            // update the position and velocity variables a single time
             m_joint_positions[i] = moe_joints[i]->get_position();
             m_joint_velocities[i] = moe_joints[i]->get_velocity();
         }

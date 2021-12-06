@@ -17,6 +17,7 @@ JointHardware::JointHardware(const std::string &name,
              std::shared_ptr<mahi::daq::EncoderHandle> position_sensor,
              double position_transmission,
              const double &velocity_sensor,
+             VelocityEstimator velocity_estimator,
              double velocity_transmission,
              double motor_kt,
              double amp_gain,
@@ -26,6 +27,7 @@ JointHardware::JointHardware(const std::string &name,
     Joint(name,position_limits,velocity_limit,torque_limit,limiter),
     m_position_sensor(position_sensor),
     m_velocity_sensor(velocity_sensor),
+    m_velocity_estimator(velocity_estimator),
     m_actuator_transmission(actuator_transmission),
     m_position_transmission(position_transmission),
     m_velocity_transmission(velocity_transmission),
@@ -34,7 +36,8 @@ JointHardware::JointHardware(const std::string &name,
     m_motor_enable_handle(motor_enable_handle),
     m_motor_enable_value(motor_enable_value),
     m_amp_write_handle(amp_write_handle),
-    butt(2,hertz(20),hertz(1000))
+    m_velocity_filter(2,100_Hz,1000_Hz),
+    m_clock()
     {
 
     }
@@ -54,19 +57,40 @@ bool JointHardware::disable() {
     return true;
 }
 
+void JointHardware::filter_velocity(){
+    // only filter velocity if we are doing software filtering. otherwise it will
+    // be coming straight from hardware already filtered
+    if(m_velocity_estimator == VelocityEstimator::Software){
+        // if this is the first loop through and it hasn't had a chance to get
+        // position yet, then get the position. If this is the case, then the velocity
+        // will read 0 for the first iteration (m_pos_last = pos_curr = get_position()),
+        // but this should correct on the second pass-through
+        if (m_pos_last == 0) {
+            m_pos_last = get_position(); 
+        }
+        auto pos_curr  = get_position();
+        auto time_curr = m_clock.get_elapsed_time().as_seconds();
+        // mahi::util::print("curr time: {}, last time: {}\ncurr pos: {}, last pos: {}", time_curr, m_time_last, pos_curr, m_pos_last);
+        auto vel_estimate = (pos_curr-m_pos_last)/(time_curr - m_time_last);
+
+        m_vel_filtered = m_velocity_filter.update(vel_estimate);
+        
+        m_time_last = time_curr;
+        m_pos_last  = pos_curr;
+    }
+}
+
 double JointHardware::get_position() {
     return m_position_transmission*m_position_sensor->get_pos();
 }
 
 double JointHardware::get_velocity() {
-    if (software_velocity){
-        static double pos_last = get_position();
-        auto curr_pos = get_position();
-        double velocity_unfiltered = (curr_pos - pos_last)/0.001;
-        pos_last = curr_pos;
-        return butt.update(velocity_unfiltered);
+    if(m_velocity_estimator == VelocityEstimator::Hardware){
+        return m_velocity_transmission*m_velocity_sensor;
     }
-    return m_velocity_transmission*m_velocity_sensor;
+    else{
+        return m_vel_filtered;
+    }
 }
 
 void JointHardware::set_torque(double new_torque) {

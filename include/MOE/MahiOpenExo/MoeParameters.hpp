@@ -29,7 +29,7 @@ namespace moe {
         pos_limits_min_    { -73.6285 * DEG2RAD, -89.8249 * DEG2RAD, -63.2490 * DEG2RAD, -42.9322 * DEG2RAD}, // radians
         pos_limits_max_    { +28.6283 * DEG2RAD, +89.8249 * DEG2RAD, +68.2490 * DEG2RAD, +30.9087 * DEG2RAD}, // radians
         vel_limits_        {      180 * DEG2RAD,      200 * DEG2RAD,      200 * DEG2RAD,      200 * DEG2RAD}, // radians/s
-        joint_torque_limits{                20.0,                20.0,                20.0,                20.0}  // Nm
+        joint_torque_limits{                8.0,                4.0,                4.0,                3.0}  // Nm
         { }
         // position limits pulled from solidworks 9/3/2021. RU positive value needs to be checked eperimentally
 
