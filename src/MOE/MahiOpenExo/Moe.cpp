@@ -205,10 +205,11 @@ namespace moe {
     }
 
     void Moe::set_high_gains(std::vector<bool> active){
+        std::vector<double> high_gains = {2.0,3.0,3.0,3.0};
         for (std::size_t i=0; i<n_j; ++i) {
             if (active[i]){
-                joint_pd_controllers_[i].kp = gains_P[i]*5.0;
-                joint_pd_controllers_[i].kd = gains_D[i]*5.0;
+                joint_pd_controllers_[i].kp = gains_P[i]*high_gains[i];
+                joint_pd_controllers_[i].kd = gains_D[i]*1.0;
             }
         }
     }

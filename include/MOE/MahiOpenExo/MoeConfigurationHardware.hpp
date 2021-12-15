@@ -36,7 +36,7 @@ namespace moe {
                                  const std::vector<mahi::daq::ChanNum> enable_channels = {0,1,2,3},
                                  const std::vector<mahi::daq::ChanNum> current_write_channels = {0,1,2,3},
                                  const std::vector<mahi::daq::TTL>     enable_values = std::vector<mahi::daq::TTL>(4,mahi::daq::TTL_HIGH),
-                                 const std::vector<double>             amp_gains = {0.4, 0.2, 0.2, 0.2}):
+                                 const std::vector<double>             amp_gains = {0.8, 0.4, 0.4, 0.4}):
             m_daq(daq),
             m_velocity_estimator(velocity_estimator),
             m_velocity_filt_sample_freq(velocity_estimator_frequency),

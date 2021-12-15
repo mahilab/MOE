@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
         daq = std::make_shared<Q8Usb>();
         daq->open();
 
-        MoeConfigurationHardware config_hw(*daq,VelocityEstimator::Software); 
+        MoeConfigurationHardware config_hw(*daq,VelocityEstimator::Hardware); 
 
         std::vector<TTL> idle_values(8,TTL_LOW);
         daq->DO.enable_values.set({0,1,2,3,4,5,6,7},idle_values);
@@ -118,9 +118,9 @@ int main(int argc, char* argv[]) {
     MelShare ms_ref("ms_ref");
 
     // create ranges for saturating trajectories for safety  MIN            MAX
-    std::vector<std::vector<double>> setpoint_rad_ranges = {{-90 * DEG2RAD, 15 * DEG2RAD},
+    std::vector<std::vector<double>> setpoint_rad_ranges = {{-90 * DEG2RAD, 20 * DEG2RAD},
                                                             {-90 * DEG2RAD, 90 * DEG2RAD},
-                                                            {-60 * DEG2RAD, 60 * DEG2RAD},
+                                                            {-80 * DEG2RAD, 80 * DEG2RAD},
                                                             {-60 * DEG2RAD, 60 * DEG2RAD}};
 
                                      // state 0    // state 1    // state 2    // state 3    // state 4    // state 5    // state 6
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
     // waypoints                                   Elbow F/E       Forearm P/S   Wrist F/E     Wrist R/U     LastDoF
     WayPoint neutral_point = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
     WayPoint bottom_elbow  = WayPoint(Time::Zero, {-65 * DEG2RAD,  45 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
-    WayPoint top_elbow     = WayPoint(Time::Zero, {  5 * DEG2RAD, -45 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
+    WayPoint top_elbow     = WayPoint(Time::Zero, { 20 * DEG2RAD, -45 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
     WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 25 * DEG2RAD});
 
     // construct timer in hybrid mode to avoid using 100% CPU
@@ -230,6 +230,7 @@ int main(int argc, char* argv[]) {
             switch (current_state) {
                 case to_neutral_0:
                     to_state(current_state, to_bottom_elbow, neutral_point, bottom_elbow, state_times[to_bottom_elbow], mj, ref_traj_clock);
+                    moe->set_high_gains();
                     break;
                 case to_bottom_elbow:
                     to_state(current_state, to_top_elbow, bottom_elbow, top_elbow, state_times[to_top_elbow], mj, ref_traj_clock);
@@ -252,12 +253,23 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        std::vector<double> act_torque;
+        if (!result.count("virtual")) {
+            daq->AI.read();
+            act_torque = {daq->AI[0],daq->AI[1],daq->AI[2],daq->AI[3]};
+
+        }
+        else{
+            act_torque = {0,0,0,0};
+        }
+
         data_line.clear();
         data_line.push_back(t);
-        for (auto &&i : ref) data_line.push_back(i);
-        for (auto &&i : moe->get_joint_positions()) data_line.push_back(i);
-        for (auto &&i : moe->get_joint_velocities()) data_line.push_back(i);
-        for (auto &&i : moe->get_joint_command_torques(0)) data_line.push_back(i);
+        for (const auto &i : ref) data_line.push_back(i);
+        for (const auto &i : moe->get_joint_positions()) data_line.push_back(i);
+        for (const auto &i : moe->get_joint_velocities()) data_line.push_back(i);
+        for (const auto &i : moe->get_joint_command_torques(0)) data_line.push_back(i);
+        for (const auto &trq : act_torque) data_line.push_back(trq);
         data.push_back(data_line);
         
 
@@ -288,7 +300,8 @@ int main(int argc, char* argv[]) {
                                        "EFE ref (rad)", "FPS ref (rad)", "WFE ref (rad)", "WRU ref (rad)",
                                        "EFE act (rad)", "FPS act (rad)", "WFE act (rad)", "WRU act (rad)",
                                        "EFE act (rad/s)", "FPS act (rad/s)", "WFE act (rad/s)", "WRU act (rad/s)",
-                                       "EFE trq (Nm)", "FPS trq (Nm)", "WFE trq (Nm)", "WRU trq (Nm)"};
+                                       "EFE trq (Nm)", "FPS trq (Nm)", "WFE trq (Nm)", "WRU trq (Nm)",
+                                       "EFE act trq (Nm)","FPS act trq (Nm)", "WFE act trq (Nm)", "WRU act trq (Nm)"};
 
     csv_write_row("data/rom_demo_results.csv",header);
     csv_append_rows("data/rom_demo_results.csv",data);

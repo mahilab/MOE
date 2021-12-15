@@ -20,7 +20,7 @@ namespace moe {
         /// Default constructor.
         MoeParameters() :
         //                              Joint 0             Joint 1             Joint 2             Joint 3      
-        kt_                {              0.127,             0.0603,             0.0603,             0.0538}, // Nm/A
+        kt_                {              0.123,             0.0603,             0.0603,             0.0538}, // Nm/A
         motor_cont_limits_ {                  5,                  5,                  5,                  5}, // Nm
         motor_peak_limits_ {                  0,                  0,                  0,                  0}, // Nm
         motor_i2t_times_   {       seconds(0.0),       seconds(0.0),       seconds(0.0),       seconds(0.0)}, // s
