@@ -310,7 +310,7 @@ namespace moe {
         stored_positions.reserve(100000);
 
         // std::array<double, n_j> sat_torques = { 4.0, 4.0, 2.0, 2.0}; // temporary saturation torques
-        std::array<double, n_j> sat_torques = { 4.0, 2.0, 2.0, 1.0}; // temporary saturation torques
+        std::array<double, n_j> sat_torques = { 6.0, 2.0, 2.0, 1.0}; // temporary saturation torques
 
         Time timeout = seconds(60); // max amout of time we will allow calibration to occur for
 
