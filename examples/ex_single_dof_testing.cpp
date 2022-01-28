@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
                                                             {-60 * DEG2RAD, 60 * DEG2RAD}};
 
                                      // state 0    // state 1    // state 2    // state 3    // state 4    // state 5    // state 6
-    std::vector<Time> state_times = {seconds(2.0), seconds(2.0), seconds(4.0), seconds(2.0), seconds(1.0), seconds(4.0), seconds(1.0)};
+    std::vector<Time> state_times = {seconds(2.0), seconds(0.5), seconds(0.5), seconds(0.5), seconds(2.0), seconds(10.0), seconds(2.0)};
 
     // setup trajectories
 
@@ -135,10 +135,10 @@ int main(int argc, char* argv[]) {
     std::vector<double> ref;
 
     // waypoints                                   Elbow F/E       Forearm P/S   Wrist F/E     Wrist R/U     LastDoF
-    WayPoint neutral_point = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
-    WayPoint bottom_elbow  = WayPoint(Time::Zero, {-65 * DEG2RAD,  45 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
-    WayPoint top_elbow     = WayPoint(Time::Zero, { 20 * DEG2RAD, -45 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
-    WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 25 * DEG2RAD});
+    WayPoint neutral_point = WayPoint(Time::Zero, {-25 * DEG2RAD,  00 * DEG2RAD, 00 * DEG2RAD, 00 * DEG2RAD});
+    WayPoint bottom_elbow  = WayPoint(Time::Zero, {-25 * DEG2RAD,  00 * DEG2RAD, 00 * DEG2RAD, 00 * DEG2RAD});
+    WayPoint top_elbow     = WayPoint(Time::Zero, {-25 * DEG2RAD,  00 * DEG2RAD, 00 * DEG2RAD, 00 * DEG2RAD});
+    WayPoint top_wrist     = WayPoint(Time::Zero, {-25 * DEG2RAD,  00 * DEG2RAD, 00 * DEG2RAD, 00 * DEG2RAD});
 
     // construct timer in hybrid mode to avoid using 100% CPU
     Timer timer(Ts, Timer::Hybrid);
@@ -204,10 +204,10 @@ int main(int argc, char* argv[]) {
             ref = mj.trajectory().at_time(ref_traj_clock.get_elapsed_time());
         } 
         else {
-            ref[0] = neutral_point.get_pos()[0];
-            ref[1] = neutral_point.get_pos()[1];
-            ref[2] = 45.0 * DEG2RAD * sin(2.0 * PI * ref_traj_clock.get_elapsed_time() / state_times[wrist_circle]);
-            ref[3] = 30.0 * DEG2RAD * cos(2.0 * PI * ref_traj_clock.get_elapsed_time() / state_times[wrist_circle]) - 5.0 * DEG2RAD;
+            ref[0] = 15.0 * DEG2RAD * mahi::util::cos(2.0 * PI * ref_traj_clock.get_elapsed_time().as_seconds() * 0.5)-40.0*DEG2RAD;
+            ref[1] = top_wrist.get_pos()[1];
+            ref[2] = top_wrist.get_pos()[2];
+            ref[3] = top_wrist.get_pos()[3];
         }
 
         // constrain trajectory to be within range
@@ -236,7 +236,7 @@ int main(int argc, char* argv[]) {
                     to_state(current_state, to_top_elbow, bottom_elbow, top_elbow, state_times[to_top_elbow], mj, ref_traj_clock);
                     break;
                 case to_top_elbow:
-                    to_state(current_state, to_neutral_1, top_elbow, neutral_point, state_times[to_neutral_1], mj, ref_traj_clock);
+                    to_state(current_state, to_top_wrist, top_elbow, top_wrist, state_times[to_top_wrist], mj, ref_traj_clock);
                     break;
                 case to_neutral_1:
                     to_state(current_state, to_top_wrist, neutral_point, top_wrist, state_times[to_top_wrist], mj, ref_traj_clock);
@@ -303,8 +303,11 @@ int main(int argc, char* argv[]) {
                                        "EFE trq (Nm)", "FPS trq (Nm)", "WFE trq (Nm)", "WRU trq (Nm)",
                                        "EFE act trq (Nm)","FPS act trq (Nm)", "WFE act trq (Nm)", "WRU act trq (Nm)"};
 
-    csv_write_row("data/rom_demo_results.csv",header);
-    csv_append_rows("data/rom_demo_results.csv",data);
+    std::string filepath;
+    if(result.count("virtual")) filepath = "data/rom_demo_results_sim.csv";
+    else filepath = "data/rom_demo_results_hw.csv";
+    csv_write_row(filepath,header);
+    csv_append_rows(filepath,data);
     
     moe->daq_disable();
     moe->disable();

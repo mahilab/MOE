@@ -296,7 +296,7 @@ namespace moe {
         
         // create needed variables
         std::vector<double> zeros = { 0, 0, 0, 0}; // determined zero positions for each joint
-        std::array<int, n_j> dir = { 1 , 1, 1, -1 };  // direction to rotate each joint
+        std::array<int, n_j> dir = { -1 , 1, -1, -1 };  // direction to rotate each joint
         uint32 calibrating_joint = 0;               // joint currently calibrating
         bool returning = false;                     // bool to track if calibrating joint is return to zero
         double pos_ref = 0;                         // desired position
