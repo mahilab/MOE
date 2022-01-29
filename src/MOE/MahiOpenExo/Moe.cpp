@@ -183,9 +183,11 @@ namespace moe {
             LOG(Error) << "Size of 'active' param must be 4. Commanding 0 torques.";
         }
         else{
+            size_t active_counter = 0;
             for (std::size_t i = 0; i < n_j; ++i) {
                 if (active[i]){
-                    command_torques[i] = joint_pd_controllers_[i].calculate(ref[i], m_joint_positions[i], 0, m_joint_velocities[i]);
+                    command_torques[i] = joint_pd_controllers_[i].calculate(ref[active_counter], m_joint_positions[i], 0, m_joint_velocities[i]);
+                    active_counter++;
                 }
             }
         }
