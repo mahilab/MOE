@@ -1,6 +1,8 @@
 #pragma once
 
 #include <MOE/MahiOpenExo/MoeParameters.hpp>
+#include<MOE/MahiOpenExo/SubjectParameters.hpp>
+#include<MOE/MahiOpenExo/MoeMassProperties.hpp>
 #include <MOE/MahiOpenExo/Joint.hpp>
 #include <Mahi/Robo/Control/PdController.hpp>
 #include <Mahi/Util/Timing/Time.hpp>
@@ -34,12 +36,29 @@ namespace moe {
         /// Enables each of the joints on the MOE
         bool on_enable() override;
 
+
         std::vector<std::shared_ptr<Joint>> moe_joints; // vector of shared pointer of moe joints
         const MoeParameters params_;                    // parameters used to control the moe
 
         std::string name_; // name of the MOE based on the device
         static const std::size_t n_j = 4; // number of joints
 
+    ///////////////////////// Mass Properties and Model Calculations /////////////////////////
+    
+    public:    
+        MoeMassProperties moe_mass_props; 
+        MassProperties cw_mass_props = MassProperties({mCw,PcxCw,PcyCw,IcxxCw,IcyyCw,IczzCw,IcxyCw,IcxzCw,IcyzCw});
+        MassProperties el_mass_props = MassProperties({mEl,PcxEl,PcyEl,IcxxEl,IcyyEl,IczzEl,IcxyEl,IcxzEl,IcyzEl});
+        MassProperties sl_mass_props = MassProperties({mSl,PcxSl,PcySl,IcxxSl,IcyySl,IczzSl,IcxySl,IcxzSl,IcyzSl});
+        double get_forearm_dist(); // Need to make sure this is written
+        // double get_cw_dist(); // need to write this
+        void update_J0(); // need to write this
+        void set_subject_parameters(SubjectParameters newParams); // Need to write this - This should automatically update_J0()
+        SubjectParameters get_subject_parameters(); // Need to write this 
+        //void initialize_parameters(SubjectParameters params = SubjectParameters());
+        std::vector<double> calc_grav_torques();
+    private:
+    SubjectParameters sub_params;
     ///////////////////////// SMOOTH REFERENCE TRAJECTORY CLASS AND INSTANCES /////////////////////////
 
     public:
@@ -102,6 +121,9 @@ namespace moe {
         void set_normal_gains(std::vector<bool> active = std::vector<bool>(n_j,true));
         /// sets the joint torques to the input torque
         void set_raw_joint_torques(std::vector<double> new_torques);
+        /// calculates the joint torques based on a reference given to the function (PD)
+        std::vector<double> calc_pos_ctrl_torques(std::vector<double> ref, std::vector<bool> active = std::vector<bool>(n_j,true));
+        
 
     /////////////////// GOAL CHECKING FUNCTIONS ///////////////////
 

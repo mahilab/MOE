@@ -25,7 +25,7 @@ namespace moe {
             m_joint_velocities.push_back(0.0);
             m_joint_torques.push_back(0.0);
         }
-
+        
     }
 
     Moe::~Moe() {
@@ -80,6 +80,84 @@ namespace moe {
         }
     }
 
+    ///////////////////////// Mass Properties and Model Calculations /////////////////////////
+
+    double Moe::get_forearm_dist(){
+        double forearm_distance = 0.28024875 - (sub_params.forearm_location-3)*0.005;
+        return forearm_distance;
+    }
+
+    void Moe::set_subject_parameters(SubjectParameters newParams){
+        sub_params = newParams;
+        update_J0();
+    }
+
+    SubjectParameters Moe::get_subject_parameters(){
+        return sub_params;
+    }
+
+    void Moe::update_J0(){
+        double x_cw = cw_mass_props.Pcx;
+        double y_cw = cw_mass_props.Pcy;// + (sub_params.cw_location - 4)*0.01270000;
+        // double z_cw = cw_mass_props.Pcz;
+        double x_sl = sl_mass_props.Pcx;
+        double y_sl = sl_mass_props.Pcy;// + (sub_params.forearm_location-3)*0.005;
+        // double z_sl = sl_mass_props.Pcz;
+        double newPcy = (cw_mass_props.m*y_cw + sl_mass_props.m*y_sl + el_mass_props.m*el_mass_props.Pcy)/(cw_mass_props.m + sl_mass_props.m + el_mass_props.m);
+        // Parallel Axis Thm
+        double Iczz_cw = cw_mass_props.Iczz + cw_mass_props.m*((x_cw-moe_mass_props.all_props[0].Pcx)*(x_cw-moe_mass_props.all_props[0].Pcx)+(y_cw-newPcy)*(y_cw-newPcy));
+        double Iczz_sl = sl_mass_props.Iczz + sl_mass_props.m*((x_sl-moe_mass_props.all_props[0].Pcx)*(x_sl-moe_mass_props.all_props[0].Pcx)+(y_sl-newPcy)*(y_sl-newPcy));
+        double Iczz_el = el_mass_props.Iczz + el_mass_props.m*((el_mass_props.Pcx-moe_mass_props.all_props[0].Pcx)*(el_mass_props.Pcx-moe_mass_props.all_props[0].Pcx)+(el_mass_props.Pcy-newPcy)*(el_mass_props.Pcy-newPcy));
+        // moe_mass_props.all_props[0].Pcx = ;
+        moe_mass_props.J0.Pcy = newPcy;
+        // moe_mass_props.all_props[0].Pcz = ;
+        // moe_mass_props.all_props[0].Icxx = ;
+        // moe_mass_props.all_props[0].Icyy = ;
+        moe_mass_props.J0.Iczz = Iczz_cw + Iczz_sl + Iczz_el;
+        // moe_mass_props.all_props[0].Icxy = ;
+        // moe_mass_props.all_props[0].Icxz = ;
+        // moe_mass_props.all_props[0].Icyz = ;
+    }
+
+    std::vector<double> Moe::calc_grav_torques(){
+        double q0 = m_joint_positions[0];
+        double q1 = m_joint_positions[1];
+        double q2 = m_joint_positions[2];
+        double q3 = m_joint_positions[3];
+        double q_s = sub_params.shoulder_ang;
+        double d = get_forearm_dist();
+        
+        double m0_ = moe_mass_props.J0.m; double m1_ = moe_mass_props.J1.m; double m2_ = moe_mass_props.J2.m; double m3_ = moe_mass_props.J3.m; 
+        double Pcx0_ = moe_mass_props.J0.Pcx; double Pcx1_ = moe_mass_props.J1.Pcx; double Pcx2_ = moe_mass_props.J2.Pcx; double Pcx3_ = moe_mass_props.J3.Pcx;
+        double Pcy0_ = moe_mass_props.J0.Pcy; double Pcy1_ = moe_mass_props.J1.Pcy; double Pcy2_ = moe_mass_props.J2.Pcy; double Pcy3_ = moe_mass_props.J3.Pcy; 
+        double Pcz0_ = moe_mass_props.J0.Pcz; double Pcz1_ = moe_mass_props.J1.Pcz; double Pcz2_ = moe_mass_props.J2.Pcz; double Pcz3_ = moe_mass_props.J3.Pcz; 
+        double Icxx0_ = moe_mass_props.J0.Icxx; double Icxx1_ = moe_mass_props.J1.Icxx; double Icxx2_ = moe_mass_props.J2.Icxx; double Icxx3_ = moe_mass_props.J3.Icxx; 
+        double Icyy0_ = moe_mass_props.J0.Icyy; double Icyy1_ = moe_mass_props.J1.Icyy; double Icyy2_ = moe_mass_props.J2.Icyy; double Icyy3_ = moe_mass_props.J3.Icyy; 
+        double Iczz0_ = moe_mass_props.J0.Iczz; double Iczz1_ = moe_mass_props.J1.Iczz; double Iczz2_ = moe_mass_props.J2.Iczz; double Iczz3_ = moe_mass_props.J3.Iczz; 
+        double Icxy0_ = moe_mass_props.J0.Icxy; double Icxy1_ = moe_mass_props.J1.Icxy; double Icxy2_ = moe_mass_props.J2.Icxy; double Icxy3_ = moe_mass_props.J3.Icxy; 
+        double Icxz0_ = moe_mass_props.J0.Icxz; double Icxz1_ = moe_mass_props.J1.Icxz; double Icxz2_ = moe_mass_props.J2.Icxz; double Icxz3_ = moe_mass_props.J3.Icxz; 
+        double Icyz0_ = moe_mass_props.J0.Icyz; double Icyz1_ = moe_mass_props.J1.Icyz; double Icyz2_ = moe_mass_props.J2.Icyz; double Icyz3_ = moe_mass_props.J3.Icyz; 
+
+        double t2 = cos(q0);
+        double t3 = cos(q1);
+        double t4 = cos(q2);
+        double t5 = cos(q3);
+        double t6 = cos(q_s);
+        double t7 = sin(q0);
+        double t8 = sin(q1);
+        double t9 = sin(q2);
+        double t10 = sin(q3);
+        double tau0 = g*t6*(-Pcx0_*m0_*t7-Pcy0_*m0_*t2-Pcz1_*m1_*t2+d*m1_*t2+d*m2_*t2+d*m3_*t2-Pcx2_*m2_*t2*t4+Pcx1_*m1_*t7*t8+Pcy1_*m1_*t3*t7+Pcy2_*m2_*t2*t9-Pcz2_*m2_*t3*t7+Pcz3_*m3_*t2*t9-Pcx3_*m3_*t2*t4*t5+Pcx3_*m3_*t3*t7*t10-Pcx2_*m2_*t7*t8*t9+Pcy3_*m3_*t3*t5*t7+Pcy3_*m3_*t2*t4*t10-Pcy2_*m2_*t4*t7*t8-Pcz3_*m3_*t4*t7*t8-Pcx3_*m3_*t5*t7*t8*t9+Pcy3_*m3_*t7*t8*t9*t10);
+        double tau1 = g*t2*t6*(-Pcx1_*m1_*t3+Pcy1_*m1_*t8-Pcz2_*m2_*t8+Pcx2_*m2_*t3*t9+Pcx3_*m3_*t8*t10+Pcy2_*m2_*t3*t4+Pcy3_*m3_*t5*t8+Pcz3_*m3_*t3*t4+Pcx3_*m3_*t3*t5*t9-Pcy3_*m3_*t3*t9*t10);
+        double tau2 = g*t6*(Pcx2_*m2_*t7*t9+Pcy2_*m2_*t4*t7+Pcz3_*m3_*t4*t7+Pcx2_*m2_*t2*t4*t8+Pcx3_*m3_*t5*t7*t9-Pcy2_*m2_*t2*t8*t9-Pcy3_*m3_*t7*t9*t10-Pcz3_*m3_*t2*t8*t9+Pcx3_*m3_*t2*t4*t5*t8-Pcy3_*m3_*t2*t4*t8*t10);
+        double tau3 = -g*m3_*t6*(Pcx3_*t2*t3*t5-Pcx3_*t4*t7*t10-Pcy3_*t2*t3*t10-Pcy3_*t4*t5*t7+Pcx3_*t2*t8*t9*t10+Pcy3_*t2*t5*t8*t9);
+        std::vector<double> grav_torques{tau0,tau1,tau2,tau3};
+        return grav_torques;
+    }
+    // void Moe::initialize_parameters(SubjectParameters subject_params){
+    //     sub_params = subject_params;
+    //     // And or is this what would calculate the mass props?
+    // }
     ///////////////////////// SMOOTH REFERENCE TRAJECTORY CLASS AND INSTANCES /////////////////////////
 
     Moe::SmoothReferenceTrajectory::SmoothReferenceTrajectory(std::vector<double> speed, std::vector<double> ref_pos, std::vector<bool> active_dofs) :
@@ -171,26 +249,46 @@ namespace moe {
 
         return command_torques;
     }
-
-    std::vector<double> Moe::set_pos_ctrl_torques(std::vector<double> ref, std::vector<bool> active) {
-        
+    std::vector<double> Moe::calc_pos_ctrl_torques(std::vector<double> ref, std::vector<bool> active) {
         std::vector<double> command_torques(n_j,0.0);
 
-        if(std::count(active.begin(), active.end(), true) != ref.size()){
-            LOG(Error) << "Size of 'ref' param must equal number of true values in 'active' param (default 4). Commanding 0 torques.";
+        if(std::count(active.begin(),active.end(),true) != ref.size()){
+            LOG(Error) << "Size of 'ref' param must equal number of true values in 'active' param (default 4). Calculating 0 torques.";
         }
         else if(size(active) != 4){
-            LOG(Error) << "Size of 'active' param must be 4. Commanding 0 torques.";
+            LOG(Error) << "Size of 'active' param must be 4. Calculating 0 torques.";
         }
         else{
             size_t active_counter = 0;
             for (std::size_t i = 0; i < n_j; ++i) {
                 if (active[i]){
-                    command_torques[i] = joint_pd_controllers_[i].calculate(ref[active_counter], m_joint_positions[i], 0, m_joint_velocities[i]);
+                    command_torques[i] = joint_pd_controllers_[i].calculate(ref[active_counter],m_joint_positions[i],0,m_joint_velocities[i]);
                     active_counter++;
                 }
             }
         }
+
+        return command_torques;
+    }
+    std::vector<double> Moe::set_pos_ctrl_torques(std::vector<double> ref, std::vector<bool> active) {
+        std::vector<double> command_torques = Moe::calc_pos_ctrl_torques(ref,active);
+        // std::vector<double> command_torques(n_j,0.0);
+
+        // if(std::count(active.begin(), active.end(), true) != ref.size()){
+        //     LOG(Error) << "Size of 'ref' param must equal number of true values in 'active' param (default 4). Commanding 0 torques.";
+        // }
+        // else if(size(active) != 4){
+        //     LOG(Error) << "Size of 'active' param must be 4. Commanding 0 torques.";
+        // }
+        // else{
+        //     size_t active_counter = 0;
+        //     for (std::size_t i = 0; i < n_j; ++i) {
+        //         if (active[i]){
+        //             command_torques[i] = joint_pd_controllers_[i].calculate(ref[active_counter], m_joint_positions[i], 0, m_joint_velocities[i]);
+        //             active_counter++;
+        //         }
+        //     }
+        // }
         set_raw_joint_torques(command_torques);
 
         return command_torques;
