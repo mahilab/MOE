@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
     MelShare ms_pos("ms_pos");
     MelShare ms_vel("ms_vel");
     MelShare ms_trq("ms_trq");
-    MelShare ms_ref("ms_ref");   
+    MelShare ms_ref("ms_ref");
 
     std::vector<std::vector<double>> setpoint_rad_ranges = {{-90 * DEG2RAD, 20 * DEG2RAD},
                                                             {-90 * DEG2RAD, 90 * DEG2RAD},
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
 
                                      // state 0    // state 1    // state 2    // state 3    // state 4    // state 5    // state 6
     
-    std::vector<Time> state_times = {seconds(2.0),seconds(10.0)};
+    std::vector<Time> state_times = {seconds(2.0),seconds(30.0)};
     double t = 0;
 
     Time mj_Ts = milliseconds(50);
@@ -144,7 +144,9 @@ int main(int argc, char* argv[]) {
     WayPoint start_pos(Time::Zero, moe->get_joint_positions());
 
     mj.set_endpoints(start_pos, neutral_point.set_time(state_times[to_neutral]));
-    SubjectParameters badParams({3,4,0});
+    SubjectParameters badParams = {7,   // forearm position from the distal end of the robot
+                                   3,   // cw position
+                                   15}; // angle in degrees
     moe->set_subject_parameters(badParams);
     //moe->update_J0();
 
@@ -176,7 +178,9 @@ int main(int argc, char* argv[]) {
             }
             else {
                 command_torques = moe->calc_grav_torques();
+                for (auto &torque : command_torques) torque *= 1.0;
                 moe->set_raw_joint_torques(command_torques);
+                
             }
         }
 

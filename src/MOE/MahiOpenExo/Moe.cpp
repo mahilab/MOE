@@ -98,10 +98,10 @@ namespace moe {
 
     void Moe::update_J0(){
         double x_cw = cw_mass_props.Pcx;
-        double y_cw = cw_mass_props.Pcy;// + (sub_params.cw_location - 4)*0.01270000;
+        double y_cw = cw_mass_props.Pcy + (sub_params.cw_location - 4)*0.01270000;
         // double z_cw = cw_mass_props.Pcz;
         double x_sl = sl_mass_props.Pcx;
-        double y_sl = sl_mass_props.Pcy;// + (sub_params.forearm_location-3)*0.005;
+        double y_sl = sl_mass_props.Pcy + (sub_params.forearm_location-3)*0.005;
         // double z_sl = sl_mass_props.Pcz;
         double newPcy = (cw_mass_props.m*y_cw + sl_mass_props.m*y_sl + el_mass_props.m*el_mass_props.Pcy)/(cw_mass_props.m + sl_mass_props.m + el_mass_props.m);
         // Parallel Axis Thm
@@ -124,7 +124,7 @@ namespace moe {
         double q1 = m_joint_positions[1];
         double q2 = m_joint_positions[2];
         double q3 = m_joint_positions[3];
-        double q_s = sub_params.shoulder_ang;
+        double q_s = DEG2RAD*sub_params.shoulder_ang;
         double d = get_forearm_dist();
         
         double m0_ = moe_mass_props.J0.m; double m1_ = moe_mass_props.J1.m; double m2_ = moe_mass_props.J2.m; double m3_ = moe_mass_props.J3.m; 
@@ -147,10 +147,11 @@ namespace moe {
         double t8 = sin(q1);
         double t9 = sin(q2);
         double t10 = sin(q3);
+        double t11 = sin(q_s);
         double tau0 = g*t6*(-Pcx0_*m0_*t7-Pcy0_*m0_*t2-Pcz1_*m1_*t2+d*m1_*t2+d*m2_*t2+d*m3_*t2-Pcx2_*m2_*t2*t4+Pcx1_*m1_*t7*t8+Pcy1_*m1_*t3*t7+Pcy2_*m2_*t2*t9-Pcz2_*m2_*t3*t7+Pcz3_*m3_*t2*t9-Pcx3_*m3_*t2*t4*t5+Pcx3_*m3_*t3*t7*t10-Pcx2_*m2_*t7*t8*t9+Pcy3_*m3_*t3*t5*t7+Pcy3_*m3_*t2*t4*t10-Pcy2_*m2_*t4*t7*t8-Pcz3_*m3_*t4*t7*t8-Pcx3_*m3_*t5*t7*t8*t9+Pcy3_*m3_*t7*t8*t9*t10);
-        double tau1 = g*t2*t6*(-Pcx1_*m1_*t3+Pcy1_*m1_*t8-Pcz2_*m2_*t8+Pcx2_*m2_*t3*t9+Pcx3_*m3_*t8*t10+Pcy2_*m2_*t3*t4+Pcy3_*m3_*t5*t8+Pcz3_*m3_*t3*t4+Pcx3_*m3_*t3*t5*t9-Pcy3_*m3_*t3*t9*t10);
-        double tau2 = g*t6*(Pcx2_*m2_*t7*t9+Pcy2_*m2_*t4*t7+Pcz3_*m3_*t4*t7+Pcx2_*m2_*t2*t4*t8+Pcx3_*m3_*t5*t7*t9-Pcy2_*m2_*t2*t8*t9-Pcy3_*m3_*t7*t9*t10-Pcz3_*m3_*t2*t8*t9+Pcx3_*m3_*t2*t4*t5*t8-Pcy3_*m3_*t2*t4*t8*t10);
-        double tau3 = -g*m3_*t6*(Pcx3_*t2*t3*t5-Pcx3_*t4*t7*t10-Pcy3_*t2*t3*t10-Pcy3_*t4*t5*t7+Pcx3_*t2*t8*t9*t10+Pcy3_*t2*t5*t8*t9);
+        double tau1 = g*(Pcx1_*m1_*t8*t11+Pcy1_*m1_*t3*t11-Pcz2_*m2_*t3*t11-Pcx1_*m1_*t2*t3*t6+Pcx3_*m3_*t3*t10*t11-Pcx2_*m2_*t8*t9*t11+Pcy1_*m1_*t2*t6*t8+Pcy3_*m3_*t3*t5*t11-Pcy2_*m2_*t4*t8*t11-Pcz2_*m2_*t2*t6*t8-Pcz3_*m3_*t4*t8*t11+Pcx2_*m2_*t2*t3*t6*t9+Pcx3_*m3_*t2*t6*t8*t10-Pcx3_*m3_*t5*t8*t9*t11+Pcy2_*m2_*t2*t3*t4*t6+Pcy3_*m3_*t2*t5*t6*t8+Pcy3_*m3_*t8*t9*t10*t11+Pcz3_*m3_*t2*t3*t4*t6+Pcx3_*m3_*t2*t3*t5*t6*t9-Pcy3_*m3_*t2*t3*t6*t9*t10);
+        double tau2 = g*(Pcx2_*m2_*t3*t4*t11+Pcx2_*m2_*t6*t7*t9+Pcy2_*m2_*t4*t6*t7-Pcy2_*m2_*t3*t9*t11+Pcz3_*m3_*t4*t6*t7-Pcz3_*m3_*t3*t9*t11+Pcx2_*m2_*t2*t4*t6*t8+Pcx3_*m3_*t3*t4*t5*t11+Pcx3_*m3_*t5*t6*t7*t9-Pcy2_*m2_*t2*t6*t8*t9-Pcy3_*m3_*t3*t4*t10*t11-Pcy3_*m3_*t6*t7*t9*t10-Pcz3_*m3_*t2*t6*t8*t9+Pcx3_*m3_*t2*t4*t5*t6*t8-Pcy3_*m3_*t2*t4*t6*t8*t10);
+        double tau3 = -g*m3_*(-Pcx3_*t5*t8*t11+Pcy3_*t8*t10*t11+Pcx3_*t2*t3*t5*t6-Pcx3_*t4*t6*t7*t10+Pcx3_*t3*t9*t10*t11-Pcy3_*t2*t3*t6*t10-Pcy3_*t4*t5*t6*t7+Pcy3_*t3*t5*t9*t11+Pcx3_*t2*t6*t8*t9*t10+Pcy3_*t2*t5*t6*t8*t9);
         std::vector<double> grav_torques{tau0,tau1,tau2,tau3};
         return grav_torques;
     }
