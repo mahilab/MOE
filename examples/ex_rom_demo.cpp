@@ -13,6 +13,14 @@ using namespace moe;
 
 using mahi::robo::WayPoint;
 
+// create global stop variable CTRL-C handler function
+ctrl_bool stop(false);
+bool handler(CtrlEvent event) {
+    stop = true;
+    return true;
+}
+
+// set up states that we will run throughout the program
 enum state {
     to_neutral_0,     // 0
     to_bottom_elbow,  // 1
@@ -22,13 +30,6 @@ enum state {
     wrist_circle,     // 5
     to_neutral_2      // 6
 };
-
-// create global stop variable CTRL-C handler function
-ctrl_bool stop(false);
-bool handler(CtrlEvent event) {
-    stop = true;
-    return true;
-}
 
 void to_state(state& current_state_, const state next_state_, WayPoint current_position_, WayPoint new_position_, Time traj_length_, MinimumJerk& mj_, Clock& ref_traj_clock_) {
     current_position_.set_time(seconds(0));
@@ -48,7 +49,7 @@ int main(int argc, char* argv[]) {
     register_ctrl_handler(handler);
 
     // make options
-    Options options("ex_pos_control_nathan.exe", "Nathan's Position Control Demo");
+    Options options("ex_rom_demo.exe", "Demo showing range of motion of MOE");
     options.add_options()
 		("c,calibrate", "Calibrates the MAHI Exo-II")
         ("n,no_torque", "trajectories are generated, but not torque provided")
@@ -93,48 +94,37 @@ int main(int argc, char* argv[]) {
         moe = std::make_shared<MahiOpenExoHardware>(config_hw);
     }
 
-
     ////////////////////////////////
 
-    //////////////////////////////////////////////
-    // create MahiOpenExo and bind daq channels to it
-    //////////////////////////////////////////////
-
-    bool rps_is_init = false;
-
-    //////////////////////////////////////////////
-
-    // calibrate - manually zero the encoders (right arm supinated)
+    // calibrate - automatically zero the encoders
     if (result.count("calibrate") > 0) {
         moe->calibrate_auto(stop);
-        LOG(Info) << "MAHI Exo-II encoders calibrated.";
+        LOG(Info) << "MOE encoders calibrated.";
         return 0;
     }
-
-    // make MelShares
-    MelShare ms_pos("ms_pos");
-    MelShare ms_vel("ms_vel");
-    MelShare ms_trq("ms_trq");
-    MelShare ms_ref("ms_ref");
 
     // create ranges for saturating trajectories for safety  MIN            MAX
     std::vector<std::vector<double>> setpoint_rad_ranges = {{-90 * DEG2RAD, 20 * DEG2RAD},
                                                             {-90 * DEG2RAD, 90 * DEG2RAD},
                                                             {-80 * DEG2RAD, 80 * DEG2RAD},
                                                             {-60 * DEG2RAD, 60 * DEG2RAD}};
-
-                                     // state 0    // state 1    // state 2    // state 3    // state 4    // state 5    // state 6
-    std::vector<Time> state_times = {seconds(2.0), seconds(2.0), seconds(4.0), seconds(2.0), seconds(1.0), seconds(4.0), seconds(1.0)};
+                                     
+    std::vector<Time> state_times = {seconds(2.0),   // to_neutral_0    
+                                     seconds(2.0),   // to_bottom_elbow
+                                     seconds(4.0),   // to_top_elbow  
+                                     seconds(2.0),   // to_neutral_1   
+                                     seconds(1.0),   // to_top_wrist    
+                                     seconds(4.0),   // wrist_circle    
+                                     seconds(1.0)};  // to_neutral_2     
 
     // setup trajectories
-
     double t = 0;
 
     Time mj_Ts = milliseconds(50);
 
     std::vector<double> ref;
 
-    // waypoints                                   Elbow F/E       Forearm P/S   Wrist F/E     Wrist R/U     LastDoF
+    // waypoints                                   Elbow F/E       Forearm P/S   Wrist F/E      Wrist R/U 
     WayPoint neutral_point = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
     WayPoint bottom_elbow  = WayPoint(Time::Zero, {-65 * DEG2RAD,  45 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
     WayPoint top_elbow     = WayPoint(Time::Zero, { 20 * DEG2RAD, -45 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
@@ -144,28 +134,25 @@ int main(int argc, char* argv[]) {
     Timer timer(Ts, Timer::Hybrid);
     timer.set_acceptable_miss_rate(0.05);
 
-    // construct clock for regulating keypress
-    Clock keypress_refract_clock;
-    Time keypress_refract_time = seconds(0.5);
-
-    std::vector<std::string> dof_str = {"ElbowFE", "WristPS", "WristFE", "WristRU"};
-
     ////////////////////////////////////////////////
     //////////// State Manager Setup ///////////////
     ////////////////////////////////////////////////
 
+    // set the current state
     state current_state = to_neutral_0;
+
+    // create waypoints to use for trajectory generation
     WayPoint current_position;
     WayPoint new_position;
-    Time traj_length;
+
+    // create minimum jerk trajectory
     WayPoint dummy_waypoint = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
     MinimumJerk mj(mj_Ts, dummy_waypoint, neutral_point.set_time(state_times[to_neutral_0]));
+
+    //                                    Elbow F/E     Forearm P/S   Wrist F/E      Wrist R/U 
     std::vector<double> traj_max_diff = { 60 * DEG2RAD, 60 * DEG2RAD, 100 * DEG2RAD, 60 * DEG2RAD};
 	mj.set_trajectory_params(Trajectory::Interp::Linear, traj_max_diff);
     Clock ref_traj_clock;
-
-    std::vector<double> aj_positions(4,0.0);
-    std::vector<double> aj_velocities(4,0.0);
 
     std::vector<double> command_torques(4,0.0);
 
@@ -173,7 +160,6 @@ int main(int argc, char* argv[]) {
 	
 	// enable DAQ and exo
 	moe->daq_enable();
-	
     moe->enable();
 	
 	// moe->daq_watchdog_start();    
@@ -181,8 +167,9 @@ int main(int argc, char* argv[]) {
     // trajectory following
     LOG(Info) << "Starting Movement.";
 
-    std::vector<std::vector<double>> data;
-    std::vector<double> data_line;
+    // prepping data collection vectors
+    std::vector<double> data_line; // data for each time step
+    std::vector<std::vector<double>> data; // contains multiple data lines
 
     //initialize kinematics
     moe->daq_read_all();
@@ -192,6 +179,7 @@ int main(int argc, char* argv[]) {
 
     mj.set_endpoints(start_pos, neutral_point.set_time(state_times[to_neutral_0]));
 
+    // now control actually starts
     while (!stop) {
         // update all DAQ input channels
         moe->daq_read_all();
@@ -230,22 +218,21 @@ int main(int argc, char* argv[]) {
             switch (current_state) {
                 case to_neutral_0:
                     to_state(current_state, to_bottom_elbow, neutral_point, bottom_elbow, state_times[to_bottom_elbow], mj, ref_traj_clock);
-                    // moe->set_high_gains();
                     break;
                 case to_bottom_elbow:
-                    to_state(current_state, to_top_elbow, bottom_elbow, top_elbow, state_times[to_top_elbow], mj, ref_traj_clock);
+                    to_state(current_state, to_top_elbow,    bottom_elbow, top_elbow, state_times[to_top_elbow], mj, ref_traj_clock);
                     break;
                 case to_top_elbow:
-                    to_state(current_state, to_neutral_1, top_elbow, neutral_point, state_times[to_neutral_1], mj, ref_traj_clock);
+                    to_state(current_state, to_neutral_1,    top_elbow, neutral_point, state_times[to_neutral_1], mj, ref_traj_clock);
                     break;
                 case to_neutral_1:
-                    to_state(current_state, to_top_wrist, neutral_point, top_wrist, state_times[to_top_wrist], mj, ref_traj_clock);
+                    to_state(current_state, to_top_wrist,    neutral_point, top_wrist, state_times[to_top_wrist], mj, ref_traj_clock);
                     break;
                 case to_top_wrist:
-                    to_state(current_state, wrist_circle, top_wrist, top_wrist, state_times[wrist_circle], mj, ref_traj_clock);
+                    to_state(current_state, wrist_circle,    top_wrist, top_wrist, state_times[wrist_circle], mj, ref_traj_clock);
                     break;
                 case wrist_circle:
-                    to_state(current_state, to_neutral_2, top_wrist, neutral_point, state_times[to_neutral_2], mj, ref_traj_clock);
+                    to_state(current_state, to_neutral_2,    top_wrist, neutral_point, state_times[to_neutral_2], mj, ref_traj_clock);
                     break;
                 case to_neutral_2:
                     stop = true;
@@ -283,9 +270,6 @@ int main(int argc, char* argv[]) {
 
         // update all DAQ output channels
         if (!stop) moe->daq_write_all();
-
-        ms_ref.write_data(moe->get_joint_positions());
-        ms_pos.write_data(moe->get_joint_velocities());
 
         // wait for remainder of sample period
         t = timer.wait().as_seconds();
