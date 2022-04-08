@@ -14,15 +14,6 @@ namespace moe {
             {
 
             }
-        // MassProperties J0; = 
-        // MassProperties J1 = {m1, pcx1, pcy1, ...}
-        // MassProperties J2 = {m2, pcx2, pcy2, ...}
-        // MassProperties J3 = {m3, pcx3, pcy3, ...}
-        // MassProperties cw = {}
-        // /* data */
-        // update_props(cw_pos, ){
-        //     all_props = {j0, j1, j2...}
-        // }
         MassProperties J0;
         MassProperties J1;
         MassProperties J2;

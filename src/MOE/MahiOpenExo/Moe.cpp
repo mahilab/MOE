@@ -89,6 +89,7 @@ namespace moe {
 
     void Moe::set_subject_parameters(SubjectParameters newParams){
         sub_params = newParams;
+        // Update mass props based on new parameters
         update_J0();
     }
 
@@ -97,26 +98,71 @@ namespace moe {
     }
 
     void Moe::update_J0(){
-        double x_cw = cw_mass_props.Pcx;
+        // x and y position of the counterweight and slider
+        // double x_cw = cw_mass_props.Pcx;
         double y_cw = cw_mass_props.Pcy + (sub_params.cw_location - 4)*0.01270000;
-        // double z_cw = cw_mass_props.Pcz;
-        double x_sl = sl_mass_props.Pcx;
+        // double x_sl = sl_mass_props.Pcx;
         double y_sl = sl_mass_props.Pcy + (sub_params.forearm_location-3)*0.005;
-        // double z_sl = sl_mass_props.Pcz;
-        double newPcy = (cw_mass_props.m*y_cw + sl_mass_props.m*y_sl + el_mass_props.m*el_mass_props.Pcy)/(cw_mass_props.m + sl_mass_props.m + el_mass_props.m);
-        // Parallel Axis Thm
-        double Iczz_cw = cw_mass_props.Iczz + cw_mass_props.m*((x_cw-moe_mass_props.all_props[0].Pcx)*(x_cw-moe_mass_props.all_props[0].Pcx)+(y_cw-newPcy)*(y_cw-newPcy));
-        double Iczz_sl = sl_mass_props.Iczz + sl_mass_props.m*((x_sl-moe_mass_props.all_props[0].Pcx)*(x_sl-moe_mass_props.all_props[0].Pcx)+(y_sl-newPcy)*(y_sl-newPcy));
-        double Iczz_el = el_mass_props.Iczz + el_mass_props.m*((el_mass_props.Pcx-moe_mass_props.all_props[0].Pcx)*(el_mass_props.Pcx-moe_mass_props.all_props[0].Pcx)+(el_mass_props.Pcy-newPcy)*(el_mass_props.Pcy-newPcy));
-        // moe_mass_props.all_props[0].Pcx = ;
+        // calculate the new center of mass for J0
+        double newPcx = (cw_mass_props.m*cw_mass_props.Pcx + sl_mass_props.m*sl_mass_props.Pcx + main_mass_props.m*main_mass_props.Pcx)/(cw_mass_props.m + sl_mass_props.m + main_mass_props.m);
+        double newPcy = (cw_mass_props.m*y_cw + sl_mass_props.m*y_sl + main_mass_props.m*main_mass_props.Pcy)/(cw_mass_props.m + sl_mass_props.m + main_mass_props.m);
+        double newPcz = (cw_mass_props.m*cw_mass_props.Pcz + sl_mass_props.m*sl_mass_props.Pcz + main_mass_props.m*main_mass_props.Pcz)/(cw_mass_props.m + sl_mass_props.m + main_mass_props.m);
+        // Parallel Axis Thm (about new center of mass)
+        // Icxx
+        double Icxx_cw = cw_mass_props.Icxx + cw_mass_props.m*((y_cw-newPcy)*(y_cw-newPcy) + (cw_mass_props.Pcz-newPcz)*(cw_mass_props.Pcz-newPcz));
+        double Icxx_sl = sl_mass_props.Icxx + sl_mass_props.m*((y_sl-newPcy)*(y_sl-newPcy) + (sl_mass_props.Pcz-newPcz)*(sl_mass_props.Pcz-newPcz));
+        double Icxx_main = main_mass_props.Icxx + main_mass_props.m*((main_mass_props.Pcy-newPcy)*(main_mass_props.Pcy-newPcy) + (main_mass_props.Pcz-newPcz)*(main_mass_props.Pcz-newPcz));
+        double newIcxx = Icxx_cw + Icxx_sl + Icxx_main;
+        // Icyy
+        double Icyy_cw = cw_mass_props.Icyy + cw_mass_props.m*((cw_mass_props.Pcx-newPcx)*(cw_mass_props.Pcx-newPcx) + (cw_mass_props.Pcz-newPcz)*(cw_mass_props.Pcz-newPcz));
+        double Icyy_sl = sl_mass_props.Icyy + sl_mass_props.m*((sl_mass_props.Pcx-newPcx)*(sl_mass_props.Pcx-newPcx) + (sl_mass_props.Pcz-newPcz)*(sl_mass_props.Pcz-newPcz));
+        double Icyy_main = main_mass_props.Icyy + main_mass_props.m*((main_mass_props.Pcx-newPcx)*(main_mass_props.Pcx-newPcx) + (main_mass_props.Pcz-newPcz)*(main_mass_props.Pcz-newPcz));
+        double newIcyy = Icyy_cw + Icyy_sl + Icyy_main;
+        
+        // Iczz
+        double Iczz_cw = cw_mass_props.Iczz + cw_mass_props.m*((cw_mass_props.Pcx-moe_mass_props.all_props[0].Pcx)*(cw_mass_props.Pcx-moe_mass_props.all_props[0].Pcx)+(y_cw-newPcy)*(y_cw-newPcy));
+        double Iczz_sl = sl_mass_props.Iczz + sl_mass_props.m*((sl_mass_props.Pcx-moe_mass_props.all_props[0].Pcx)*(sl_mass_props.Pcx-moe_mass_props.all_props[0].Pcx)+(y_sl-newPcy)*(y_sl-newPcy));
+        double Iczz_main = main_mass_props.Iczz + main_mass_props.m*((main_mass_props.Pcx-moe_mass_props.all_props[0].Pcx)*(main_mass_props.Pcx-moe_mass_props.all_props[0].Pcx)+(main_mass_props.Pcy-newPcy)*(main_mass_props.Pcy-newPcy));
+        double newIczz = Iczz_cw + Iczz_sl + Iczz_main;
+
+        // Icxy
+        double Icxy_cw = cw_mass_props.Icxy + cw_mass_props.m*((cw_mass_props.Pcx-newPcx)*(y_cw-newPcy));
+        double Icxy_sl = sl_mass_props.Icxy + sl_mass_props.m*((sl_mass_props.Pcx-newPcx)*(y_sl-newPcy));
+        double Icxy_main = main_mass_props.Icxy + main_mass_props.m*((main_mass_props.Pcx-newPcx)*(main_mass_props.Pcy-newPcy));
+        double newIcxy = Icxy_cw + Icxy_sl + Icxy_main;
+
+        // Icxz
+        double Icxz_cw = cw_mass_props.Icxz + cw_mass_props.m*((cw_mass_props.Pcx-newPcx)*(cw_mass_props.Pcz-newPcz));
+        double Icxz_sl = sl_mass_props.Icxz + sl_mass_props.m*((sl_mass_props.Pcx-newPcx)*(sl_mass_props.Pcz-newPcz));
+        double Icxz_main = main_mass_props.Icxz + main_mass_props.m*((main_mass_props.Pcx-newPcx)*(main_mass_props.Pcz-newPcz));
+        double newIcxz = Icxz_cw + Icxz_sl + Icxz_main;
+
+        // Icyz
+        double Icyz_cw = cw_mass_props.Icyz + cw_mass_props.m*((cw_mass_props.Pcy-newPcy)*(cw_mass_props.Pcz-newPcz));
+        double Icyz_sl = sl_mass_props.Icyz + sl_mass_props.m*((sl_mass_props.Pcy-newPcy)*(sl_mass_props.Pcz-newPcz));
+        double Icyz_main = main_mass_props.Icyz + main_mass_props.m*((main_mass_props.Pcy-newPcy)*(main_mass_props.Pcz-newPcz));
+        double newIcyz = Icyz_cw + Icyz_sl + Icyz_main;
+        // Set new values to J0 (both the joint, and all_props)
+        moe_mass_props.J0.Pcx = newPcx;
         moe_mass_props.J0.Pcy = newPcy;
-        // moe_mass_props.all_props[0].Pcz = ;
-        // moe_mass_props.all_props[0].Icxx = ;
-        // moe_mass_props.all_props[0].Icyy = ;
-        moe_mass_props.J0.Iczz = Iczz_cw + Iczz_sl + Iczz_el;
-        // moe_mass_props.all_props[0].Icxy = ;
-        // moe_mass_props.all_props[0].Icxz = ;
-        // moe_mass_props.all_props[0].Icyz = ;
+        moe_mass_props.J0.Pcz = newPcz;
+        moe_mass_props.J0.Icxx = newIcxx;
+        moe_mass_props.J0.Icyy = newIcyy;
+        moe_mass_props.J0.Iczz = newIczz;
+        moe_mass_props.J0.Icxy = newIcxy;
+        moe_mass_props.J0.Icxz = newIcxz;
+        moe_mass_props.J0.Icyz = newIcyz;
+
+
+        moe_mass_props.all_props[0].Pcx = moe_mass_props.J0.Pcx;
+        moe_mass_props.all_props[0].Pcy = moe_mass_props.J0.Pcy;
+        moe_mass_props.all_props[0].Pcz = moe_mass_props.J0.Pcz;
+        moe_mass_props.all_props[0].Icxx = moe_mass_props.J0.Icxx;
+        moe_mass_props.all_props[0].Icyy = moe_mass_props.J0.Icyy;
+        moe_mass_props.all_props[0].Iczz = moe_mass_props.J0.Iczz;
+        moe_mass_props.all_props[0].Icxy = moe_mass_props.J0.Icxy;
+        moe_mass_props.all_props[0].Icxz = moe_mass_props.J0.Icxz;
+        moe_mass_props.all_props[0].Icyz = moe_mass_props.J0.Icyz;
     }
 
     std::vector<double> Moe::calc_grav_torques(){
@@ -155,10 +201,7 @@ namespace moe {
         std::vector<double> grav_torques{tau0,tau1,tau2,tau3};
         return grav_torques;
     }
-    // void Moe::initialize_parameters(SubjectParameters subject_params){
-    //     sub_params = subject_params;
-    //     // And or is this what would calculate the mass props?
-    // }
+
     ///////////////////////// SMOOTH REFERENCE TRAJECTORY CLASS AND INSTANCES /////////////////////////
 
     Moe::SmoothReferenceTrajectory::SmoothReferenceTrajectory(std::vector<double> speed, std::vector<double> ref_pos, std::vector<bool> active_dofs) :
