@@ -12,9 +12,23 @@ bool handler(CtrlEvent event) {
     return true;
 }
 
-int main(int arc, char const *argv[])
+int main(int argc, char *argv[])
 {
     register_ctrl_handler(handler);
+
+    // make options
+    Options options("ex_pos_control_nathan.exe", "Nathan's Position Control Demo");
+    options.add_options()
+		("j,joint_num", "joint number to test", cxxopts::value<int>())
+		("h,help", "Prints this help message");
+
+    auto result = options.parse(argc, argv);
+
+    // if -h, print the help option
+    if (result.count("help") > 0) {
+        print_var(options.help());
+        return 0;
+    }
 
     Q8Usb q8;
     if (!q8.is_open())
@@ -22,6 +36,19 @@ int main(int arc, char const *argv[])
     
     // EXPERIMENT PARAMETERS
     int active_joint = 0;
+    if (result.count("joint_num")){
+        active_joint = result["joint_num"].as<int>();
+    }
+    else {
+        print_var("Please specify a joint number");
+        return -1;
+    }
+
+    if (active_joint < 0 || active_joint > 3) {
+        print_var("Joint number must be between 0 and 3");
+        return -1;
+    }
+
     double torque_increment = 0.005; // [Nm];
     double max_torque = 0.1; // [Nm]
     //
@@ -39,6 +66,7 @@ int main(int arc, char const *argv[])
 
     // don't do anything until the user hits enter
     prompt("Press ENTER to start I/O loop.");
+    std::cout << "Press ctrl+c to exit at any time" << std::endl;
     
     // enable motor
     q8.DO[active_joint] = TTL_HIGH;

@@ -14,9 +14,23 @@ bool handler(CtrlEvent event) {
     return true;
 }
 
-int main(int arc, char const *argv[])
+int main(int argc, char *argv[])
 {
     register_ctrl_handler(handler);
+
+    // make options
+    Options options("ex_pos_control_nathan.exe", "Nathan's Position Control Demo");
+    options.add_options()
+		("j,joint_num", "joint number to test", cxxopts::value<int>())
+		("h,help", "Prints this help message");
+
+    auto result = options.parse(argc, argv);
+
+    // if -h, print the help option
+    if (result.count("help") > 0) {
+        print_var(options.help());
+        return 0;
+    }
 
     Q8Usb q8;
     if (!q8.is_open())
@@ -25,10 +39,24 @@ int main(int arc, char const *argv[])
     // EXPERIMENT PARAMETERS
     // trajectory parameters -> desired_pos = traj_amplitude*sin(2.0*PI*traj_frequency*t.as_seconds()) + traj_offset
     double traj_frequency = 0.5; // Hz
-    double traj_amplitude = 25 * DEG2RAD; // amplitude in radians
+    double traj_amplitude = 20 * DEG2RAD; // amplitude in radians
     double traj_offset = 0*DEG2RAD; // sinwave
 
-    moe_joint_enum active_joint = elbow_fe;
+    // EXPERIMENT PARAMETERS
+    int active_joint = 0;
+    if (result.count("joint_num")){
+        active_joint = result["joint_num"].as<int>();
+    }
+    else {
+        print_var("Please specify a joint number");
+        return -1;
+    }
+
+    if (active_joint < 0 || active_joint > 3) {
+        print_var("Joint number must be between 0 and 3");
+        return -1;
+    }
+
     Time traj_time = 10_s;
     // END EXPERIMENT PARAMETERS
 
