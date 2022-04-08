@@ -1,6 +1,8 @@
 #pragma once
 
 #include <MOE/MahiOpenExo/MoeParameters.hpp>
+#include<MOE/MahiOpenExo/SubjectParameters.hpp>
+#include<MOE/MahiOpenExo/MoeMassProperties.hpp>
 #include <MOE/MahiOpenExo/Joint.hpp>
 #include <Mahi/Robo/Control/PdController.hpp>
 #include <Mahi/Util/Timing/Time.hpp>
@@ -34,12 +36,30 @@ namespace moe {
         /// Enables each of the joints on the MOE
         bool on_enable() override;
 
+
         std::vector<std::shared_ptr<Joint>> moe_joints; // vector of shared pointer of moe joints
         const MoeParameters params_;                    // parameters used to control the moe
 
         std::string name_; // name of the MOE based on the device
         static const std::size_t n_j = 4; // number of joints
 
+    ///////////////////////// Mass Properties and Model Calculations /////////////////////////
+    
+    public:    
+        // Struct containing the mass properties of each joint on MOE
+        MoeMassProperties moe_mass_props; 
+        // Structs containing the mass properties of the counterweight, elbow, and slider on MOE
+        MassProperties cw_mass_props = MassProperties({m0_Cw,Pcx0_Cw,Pcy0_Cw,Icxx0_Cw,Icyy0_Cw,Iczz0_Cw,Icxy0_Cw,Icxz0_Cw,Icyz0_Cw});
+        MassProperties main_mass_props = MassProperties({m0_Main,Pcx0_Main,Pcy0_Main,Icxx0_Main,Icyy0_Main,Iczz0_Main,Icxy0_Main,Icxz0_Main,Icyz0_Main});
+        MassProperties sl_mass_props = MassProperties({m0_Sl,Pcx0_Sl,Pcy0_Sl,Icxx0_Sl,Icyy0_Sl,Iczz0_Sl,Icxy0_Sl,Icxz0_Sl,Icyz0_Sl});
+        // Function that gets the forearm distance based on the slider position (in sub_params). Forearm distance is defined as the length from the elbow frame to the wrist frames
+        double get_forearm_dist(); 
+        void update_J0(); // Updates the mass properties of the elbow joint based on sub_params
+        void set_subject_parameters(SubjectParameters newParams); // Sets the private struct sub_params
+        SubjectParameters get_subject_parameters(); // gets the private struct sub_params
+        std::vector<double> calc_grav_torques(); // calculates the gravity vector based on mass props and current joint angles
+    private:
+    SubjectParameters sub_params; // private variable for the subject specific parameters (elbow position, counterweight position, shoulder angle)
     ///////////////////////// SMOOTH REFERENCE TRAJECTORY CLASS AND INSTANCES /////////////////////////
 
     public:
@@ -102,6 +122,9 @@ namespace moe {
         void set_normal_gains(std::vector<bool> active = std::vector<bool>(n_j,true));
         /// sets the joint torques to the input torque
         void set_raw_joint_torques(std::vector<double> new_torques);
+        /// calculates the joint torques based on a reference given to the function (PD)
+        std::vector<double> calc_pos_ctrl_torques(std::vector<double> ref, std::vector<bool> active = std::vector<bool>(n_j,true));
+        
 
     /////////////////// GOAL CHECKING FUNCTIONS ///////////////////
 
