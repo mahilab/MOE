@@ -144,9 +144,9 @@ int main(int argc, char* argv[]) {
     WayPoint start_pos(Time::Zero, moe->get_joint_positions());
 
     mj.set_endpoints(start_pos, neutral_point.set_time(state_times[to_neutral]));
-    SubjectParameters badParams = {7,   // forearm position from the distal end of the robot
-                                   3,   // cw position
-                                   15}; // angle in degrees
+    SubjectParameters badParams = {3,   // forearm position from the distal end of the robot
+                                   4,   // cw position
+                                   0}; // angle in degrees
     moe->set_subject_parameters(badParams);
     //moe->update_J0();
 

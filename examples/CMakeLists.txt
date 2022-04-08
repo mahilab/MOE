@@ -8,5 +8,5 @@ add_executable(single_dof_testing ex_single_dof_testing.cpp)
 target_link_libraries(single_dof_testing moe::moe)
 
 
-add_executable(grav_comp grav_comp.cpp)
+add_executable(grav_comp ex_grav_comp.cpp)
 target_link_libraries(grav_comp moe::moe)
