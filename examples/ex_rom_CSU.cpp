@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
     // waypoints = location markers, obtain coordinate data for locations, different points tring to use throughout experiment, allocate when & how long 
     // waypoints                                   Elbow F/E       Forearm P/S   Wrist F/E     Wrist R/U     LastDoF
     WayPoint neutral_point = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
-    WayPoint bottom_elbow  = WayPoint(Time::Zero, {-65 * DEG2RAD,  45 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
+    WayPoint bottom_elbow  = WayPoint(Time::Zero, {-65 * DEG2RAD,  45 * DEG2RAD, 30  * DEG2RAD, 00 * DEG2RAD});
     WayPoint top_elbow     = WayPoint(Time::Zero, { 20 * DEG2RAD, -45 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
     WayPoint top_wrist     = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 25 * DEG2RAD});
 

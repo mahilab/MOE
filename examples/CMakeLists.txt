@@ -6,3 +6,6 @@ target_link_libraries(rom_demo moe::moe)
 
 add_executable(single_dof_testing ex_single_dof_testing.cpp)
 target_link_libraries(single_dof_testing moe::moe)
+
+add_executable(ex_rom_CSU ex_rom_CSU.cpp)
+target_link_libraries(ex_rom_CSU moe::moe)
