@@ -9,3 +9,6 @@ target_link_libraries(single_dof_testing moe::moe)
 
 add_executable(ex_rom_CSU ex_rom_CSU.cpp)
 target_link_libraries(ex_rom_CSU moe::moe)
+
+add_executable(grav_comp ex_grav_comp.cpp)
+target_link_libraries(grav_comp moe::moe)

@@ -49,6 +49,7 @@ set(SRC_MOE
 
 file(GLOB_RECURSE INC_MOE "include/*.hpp")
 
+
 add_library(moe)
 add_library(moe::moe ALIAS moe)
 set_target_properties(moe PROPERTIES DEBUG_POSTFIX -d)
@@ -61,16 +62,18 @@ install(TARGETS moe EXPORT moe-targets LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDI
 target_sources(moe PRIVATE ${SRC_MOE} ${INC_MOE})
 
 target_include_directories(moe
-    PUBLIC
-        $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
+PUBLIC
+$<INSTALL_INTERFACE:include>
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+PRIVATE
+${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 target_link_libraries(moe mahi::daq mahi::robo mahi::com)
 
 if(MOE_EXAMPLES)
-    message("Building MOE Examples")
-    add_subdirectory(examples)
+message("Building MOE Examples")
+add_subdirectory(examples)
 endif()
+
+add_subdirectory(setup)
