@@ -39,9 +39,9 @@ namespace moe {
         // Function to get V
         Eigen::MatrixXd get_V();
         // Function to get G
-        Eigen::MatrixXd get_G();
+        Eigen::VectorXd get_G();
         // Function to get Friction
-        Eigen::MatrixXd get_Friction();
+        Eigen::VectorXd get_Friction();
 
     };
 }
