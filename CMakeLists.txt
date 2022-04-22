@@ -39,13 +39,13 @@ FetchContent_MakeAvailable(mahi-com)
 # add definitions
 add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -D_WINSOCK_DEPRECATED_NO_WARNINGS)
 
-set(SRC_MOE
-    src/MOE/MahiOpenExo/Joint.cpp
-    src/MOE/MahiOpenExo/JointHardware.cpp
-    src/MOE/MahiOpenExo/MahiOpenExoHardware.cpp
-    src/MOE/MahiOpenExo/JointVirtual.cpp
-    src/MOE/MahiOpenExo/MahiOpenExoVirtual.cpp
-    src/MOE/MahiOpenExo/Moe.cpp)
+# set(SRC_MOE
+#     src/MOE/MahiOpenExo/Joint.cpp
+#     src/MOE/MahiOpenExo/JointHardware.cpp
+#     src/MOE/MahiOpenExo/MahiOpenExoHardware.cpp
+#     src/MOE/MahiOpenExo/JointVirtual.cpp
+#     src/MOE/MahiOpenExo/MahiOpenExoVirtual.cpp
+#     src/MOE/MahiOpenExo/Moe.cpp)
 
 file(GLOB_RECURSE INC_MOE "include/*.hpp")
 
@@ -77,3 +77,4 @@ add_subdirectory(examples)
 endif()
 
 add_subdirectory(setup)
+add_subdirectory()
