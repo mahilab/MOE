@@ -1,6 +1,7 @@
 #pragma once
 #include <MOE/MahiOpenExo/Dynamics/MoeMassProperties.hpp>
-
+#include <MOE/MahiOpenExo/Dynamics/UserParams.hpp>
+#include <Eigen/Dense>
 #include <array>
 #include <vector>
 
@@ -16,7 +17,7 @@ namespace moe {
         private:
         /// Member variables for state
         std::vector<double> q = {0.0,0.0,0.0,0.0};
-        std::vector<double> qdot = {0.0,0.0,0.0,0.0};
+        std::vector<double> qd = {0.0,0.0,0.0,0.0};
         /// Struct containing the mass properties MOE
         MoeMassProperties moe_mass_props;
         /// Stuct containing the user params
