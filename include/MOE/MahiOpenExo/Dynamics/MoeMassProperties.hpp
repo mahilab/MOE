@@ -1,5 +1,5 @@
 #pragma once
-#include<include/MOE/MahiOpenExo/Dynamics/JointProperties.hpp>
+#include<MOE/MahiOpenExo/Dynamics/JointProperties.hpp>
 #include <array>
 namespace moe {
     struct MoeMassProperties
