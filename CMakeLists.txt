@@ -77,4 +77,4 @@ add_subdirectory(examples)
 endif()
 
 add_subdirectory(setup)
-add_subdirectory()
+add_subdirectory(src/MOE/MahiOpenExo)

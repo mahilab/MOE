@@ -1,5 +1,5 @@
 #include <Moe/MahiOpenExo/Dynamics/MoeDynamicModel.hpp>
-
+#include <Mahi/Util.hpp>
 using mahi::util::cos;
 using mahi::util::sin;
 
