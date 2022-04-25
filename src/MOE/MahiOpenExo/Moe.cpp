@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <Mahi/Util/Print.hpp>
 #include <Mahi/Util/Logging/Log.hpp>
+#include <Eigen/Dense>
 
 using namespace mahi::util;
 using namespace mahi::daq;
@@ -19,7 +20,7 @@ namespace moe {
         Device("mahi_open_exo"),
         params_(parameters)
     {
-
+        moe_dynamic_model.update_J0();
         for (int i = 0; i < n_j; i++) {
             m_joint_positions.push_back(0.0);
             m_joint_velocities.push_back(0.0);
@@ -82,15 +83,15 @@ namespace moe {
 
     ///////////////////////// Mass Properties and Model Calculations /////////////////////////
 
-    void Moe::set_subject_parameters(SubjectParameters newParams){
-        sub_params = newParams;
+    void Moe::set_subject_parameters(UserParams newParams){
+        moe_dynamic_model.set_user_params(newParams);
         // Update mass props based on new parameters
         moe_dynamic_model.update_J0();
     }
 
-    SubjectParameters Moe::get_subject_parameters(){
-        return sub_params;
-    }
+    // SubjectParameters Moe::get_subject_parameters(){
+    //     return sub_params;
+    // }
 
 
     std::vector<double> Moe::calc_grav_torques(){

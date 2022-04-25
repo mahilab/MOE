@@ -1,7 +1,7 @@
 #pragma once
 
 #include <MOE/MahiOpenExo/MoeParameters.hpp>
-#include<MOE/MahiOpenExo/SubjectParameters.hpp>
+// #include<MOE/MahiOpenExo/SubjectParameters.hpp>
 // #include<MOE/MahiOpenExo/MoeMassProperties.hpp>
 #include<MOE/MahiOpenExo/Dynamics/MoeDynamicModel.hpp>
 #include <MOE/MahiOpenExo/Joint.hpp>
@@ -49,11 +49,11 @@ namespace moe {
     public:    
         MoeDynamicModel moe_dynamic_model; // class for the dynamic model of MOE 
         // void update_J0(); // Updates the mass properties of the elbow joint based on sub_params
-        void set_subject_parameters(SubjectParameters newParams); // Sets the private struct sub_params
-        SubjectParameters get_subject_parameters(); // gets the private struct sub_params
+        void set_subject_parameters(UserParams newParams); // Sets the private struct sub_params
+        UserParams get_subject_parameters(); // gets the private struct sub_params
         std::vector<double> calc_grav_torques(); // calculates the gravity vector based on mass props and current joint angles
     private:
-    SubjectParameters sub_params; // private variable for the subject specific parameters (elbow position, counterweight position, shoulder angle)
+    // SubjectParameters sub_params; // private variable for the subject specific parameters (elbow position, counterweight position, shoulder angle)
     ///////////////////////// SMOOTH REFERENCE TRAJECTORY CLASS AND INSTANCES /////////////////////////
 
     public:

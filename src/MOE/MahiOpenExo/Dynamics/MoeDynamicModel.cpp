@@ -67,6 +67,7 @@ namespace moe {
         moe_mass_props.J0.Icxy = newIcxy;
         moe_mass_props.J0.Icxz = newIcxz;
         moe_mass_props.J0.Icyz = newIcyz;
+        moe_mass_props.J0.m = moe_mass_props.J0_counterweight.m + moe_mass_props.J0_slider.m + moe_mass_props.J0_main.m;
 
         
     }
