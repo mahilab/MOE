@@ -14,10 +14,10 @@ namespace moe {
         /// Destructor
         ~MoeDynamicModel();
 
-        private:
         /// Member variables for state
         std::vector<double> q = {0.0,0.0,0.0,0.0};
         std::vector<double> qd = {0.0,0.0,0.0,0.0};
+        private:
         /// Struct containing the mass properties MOE
         MoeMassProperties moe_mass_props;
         /// Stuct containing the user params
