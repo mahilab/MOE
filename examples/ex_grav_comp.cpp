@@ -152,9 +152,9 @@ int main(int argc, char* argv[]) {
 
     while (!stop) {
         moe->daq_read_all();
-        moe->moe_dynamic_model.update(moe->get_joint_positions(),moe->get_joint_velocities());
 
         moe->update();
+        moe->moe_dynamic_model.update(moe->get_joint_positions(),moe->get_joint_velocities());
 
         if (current_state == to_neutral) {
             ref = mj.trajectory().at_time(ref_traj_clock.get_elapsed_time());
@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
             }
             else {
                 command_torques = moe->calc_grav_torques();
-                for (auto &torque : command_torques) torque *= 1.0;
+                for (auto &torque : command_torques) torque *= -1.0;
                 moe->set_raw_joint_torques(command_torques);
                 
             }

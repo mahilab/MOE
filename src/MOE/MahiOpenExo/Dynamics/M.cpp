@@ -6,8 +6,7 @@ using mahi::util::sin;
 namespace moe {
 Eigen::MatrixXd MoeDynamicModel::get_M(){
 	Eigen::MatrixXd M = Eigen::MatrixXd::Zero(4,4); 
-	double dist = .28;
-	double q_s = 0;
+
 	const double t2 = cos(q[1]);
 	const double t3 = cos(q[2]);
 	const double t4 = cos(q[3]);

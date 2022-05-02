@@ -8,8 +8,8 @@ int main(int argc, char* argv[]) {
     moe_dyn_model.set_user_params(UserParams{3,4,0});
     moe_dyn_model.update({0,0,0,0},{0,0,0,0});
     moe_dyn_model.update_J0();
-    std::cout << moe_dyn_model.q << std::endl;
-    std::cout << moe_dyn_model.qd << std::endl;
+    // std::cout << moe_dyn_model.q << std::endl;
+    // std::cout << moe_dyn_model.qd << std::endl;
     std::cout << moe_dyn_model.get_G();
     // std::cout << test_G;
     

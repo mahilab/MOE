@@ -3,6 +3,7 @@ target_sources(moe
     G.cpp
     M.cpp
     V.cpp
+    Friction.cpp
     MoeDynamicModel.cpp)
 
     

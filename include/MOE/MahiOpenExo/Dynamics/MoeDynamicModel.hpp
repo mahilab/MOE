@@ -32,7 +32,8 @@ namespace moe {
         void set_user_params(UserParams newParams);
         // Function to get the user parameters
         UserParams get_user_params();
-
+        double q_s = 0.0;
+        double dist = 0.28024875;
         // Functions for dynamic equations
         public:
         // Function to get M

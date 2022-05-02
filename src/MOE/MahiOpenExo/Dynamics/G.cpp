@@ -9,8 +9,6 @@ namespace moe {
 Eigen::VectorXd MoeDynamicModel::get_G(){
 	Eigen::VectorXd G = Eigen::VectorXd::Zero(4); 
 
-	double q_s = 0;
-	double dist = .28;
 	const double t2 = cos(q[0]);
 	const double t3 = cos(q[1]);
 	const double t4 = cos(q[2]);
