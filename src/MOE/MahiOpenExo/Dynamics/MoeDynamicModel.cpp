@@ -94,4 +94,19 @@ namespace moe {
         return user_params;
     }
 
+    Eigen::MatrixXd MoeDynamicModel::get_rotor_inertia() {
+        Eigen::VectorXd rotor_inertia_vector = Eigen::VectorXd::Zero(n_j);
+
+        for (int i = 0; i < rotor_inertia_vector.size(); i++) {
+            rotor_inertia_vector(i) = rotor_inertias[i];
+        }
+        Eigen::MatrixXd rotor_inertia = rotor_inertia_vector.asDiagonal();
+
+        return rotor_inertia;
+    }
+
+    Eigen::MatrixXd MoeDynamicModel::get_effective_M() {
+        Eigen::MatrixXd effective_M = get_M() + get_rotor_inertia();
+        return effective_M;
+    }
 }

@@ -9,8 +9,6 @@ namespace moe {
 Eigen::VectorXd MoeDynamicModel::get_Friction(){
 	Eigen::VectorXd friction = Eigen::VectorXd::Zero(4); 
 
-	static std::vector<double> B_coeff = {0.0393, 0.0691, 0.0068, 0.0025};
-	static std::vector<double> Fk_coeff = {0.1838, 0.1572, 0.0996, 0.1685};
 
 	friction(0,0) = Fk_coeff[0]*std::tanh(qd[0]*10) + B_coeff[0]*qd[0];
 	friction(1,0) = Fk_coeff[1]*std::tanh(qd[1]*10) + B_coeff[1]*qd[1];
