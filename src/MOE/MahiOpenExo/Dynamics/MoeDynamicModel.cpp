@@ -68,25 +68,13 @@ namespace moe {
         moe_mass_props.J0.Icxy = newIcxy;
         moe_mass_props.J0.Icxz = newIcxz;
         moe_mass_props.J0.Icyz = newIcyz;
-        moe_mass_props.J0.m = moe_mass_props.J0_counterweight.m + moe_mass_props.J0_slider.m + moe_mass_props.J0_main.m;
-
-        std::cout << "J0 Pcx: "  << moe_mass_props.J0.Pcx << std::endl;
-        std::cout << "J0 Pcy: "  << moe_mass_props.J0.Pcy << std::endl;
-        std::cout << "J0 Pcz: "  << moe_mass_props.J0.Pcz << std::endl;
-        std::cout << "J0 Icxx: " << moe_mass_props.J0.Icxx << std::endl;
-        std::cout << "J0 Icyy: " << moe_mass_props.J0.Icyy << std::endl;
-        std::cout << "J0 Iczz: " << moe_mass_props.J0.Iczz << std::endl;
-        std::cout << "J0 Icxy: " << moe_mass_props.J0.Icxy << std::endl;
-        std::cout << "J0 Icxz: " << moe_mass_props.J0.Icxz << std::endl;
-        std::cout << "J0 Icyz: " << moe_mass_props.J0.Icyz << std::endl;
-        std::cout << "J0 m: "    << moe_mass_props.J0.m << std::endl;
-        
+        moe_mass_props.J0.m = moe_mass_props.J0_counterweight.m + moe_mass_props.J0_slider.m + moe_mass_props.J0_main.m;        
     }
 
     void MoeDynamicModel::set_user_params(UserParams newParams) {
         user_params = newParams;
         q_s = mahi::util::DEG2RAD*user_params.shoulder_ang;
-        dist = 0.28024875 + 0.005*(user_params.forearm_location - 3);
+        dist = 0.28024875 - 0.005*(user_params.forearm_location - 3);
         update_J0();
     }
 
