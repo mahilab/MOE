@@ -1,8 +1,20 @@
 #include <Moe/MahiOpenExo/Dynamics/MoeDynamicModel.hpp>
 #include <Mahi/Util.hpp>
 namespace moe {
-    MoeDynamicModel::MoeDynamicModel() {
-
+    MoeDynamicModel::MoeDynamicModel()
+     {
+#ifdef MAHI_MPC
+        q0 = casadi::SX::sym("q0");
+        q1 = casadi::SX::sym("q1");
+        q2 = casadi::SX::sym("q2");
+        q3 = casadi::SX::sym("q3");
+        q0_dot = casadi::SX::sym("q0_dot");
+        q1_dot = casadi::SX::sym("q1_dot");
+        q2_dot = casadi::SX::sym("q2_dot");
+        q3_dot = casadi::SX::sym("q3_dot");
+        cas_q = casadi::SX::vertcat({q0,q1,q2,q3});
+        cas_qd = casadi::SX::vertcat({q0_dot,q1_dot,q2_dot,q3_dot});
+#endif
     }
 
     MoeDynamicModel::~MoeDynamicModel() {
@@ -86,7 +98,7 @@ namespace moe {
         Eigen::VectorXd rotor_inertia_vector = Eigen::VectorXd::Zero(n_j);
 
         for (int i = 0; i < rotor_inertia_vector.size(); i++) {
-            rotor_inertia_vector(i) = rotor_inertias[i];
+            rotor_inertia_vector(i) = rotor_inertias[i]/joint_etas[i]/joint_etas[i];
         }
         Eigen::MatrixXd rotor_inertia = rotor_inertia_vector.asDiagonal();
 
@@ -97,4 +109,22 @@ namespace moe {
         Eigen::MatrixXd effective_M = get_M() + get_rotor_inertia();
         return effective_M;
     }
+
+#ifdef MAHI_MPC
+    casadi::SX MoeDynamicModel::cas_get_rotor_inertia() {
+        casadi::SX rotor_inertia_vector = casadi::SX::zeros(n_j,1);
+
+        for (int i = 0; i < rotor_inertias.size(); i++) {
+            rotor_inertia_vector(i,0) = rotor_inertias[i]/joint_etas[i]/joint_etas[i];
+        }
+        casadi::SX rotor_inertia = casadi::SX::diag(rotor_inertia_vector);
+
+        return rotor_inertia;
+    }
+
+    casadi::SX MoeDynamicModel::cas_get_effective_M() {
+        casadi::SX effective_M = cas_get_M() + cas_get_rotor_inertia();
+        return effective_M;
+    }
+#endif
 }

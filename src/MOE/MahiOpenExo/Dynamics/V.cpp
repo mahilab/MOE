@@ -1,11 +1,12 @@
 #include <Moe/MahiOpenExo/Dynamics/MoeDynamicModel.hpp>
 #include <Mahi/Util.hpp>
+
 using mahi::util::cos;
 using mahi::util::sin;
 
 namespace moe {
-Eigen::MatrixXd MoeDynamicModel::get_V(){
-	Eigen::MatrixXd V = Eigen::MatrixXd::Zero(4,4); 
+Eigen::VectorXd MoeDynamicModel::get_V(){
+	Eigen::VectorXd V = Eigen::VectorXd::Zero(4); 
 
 	const double t2 = cos(q[1]);
 	const double t3 = cos(q[2]);

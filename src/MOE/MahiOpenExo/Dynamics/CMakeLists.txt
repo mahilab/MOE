@@ -6,4 +6,11 @@ target_sources(moe
     Friction.cpp
     MoeDynamicModel.cpp)
 
-    
+if (WITH_MAHI_MPC)
+    target_sources(moe
+        PRIVATE
+        cas_G.cpp
+        cas_M.cpp
+        cas_V.cpp
+        cas_Friction.cpp)
+endif()
