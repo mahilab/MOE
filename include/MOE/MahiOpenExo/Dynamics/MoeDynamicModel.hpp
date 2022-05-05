@@ -5,6 +5,10 @@
 #include <array>
 #include <vector>
 
+#ifdef MAHI_MPC
+#include <casadi/casadi.hpp>
+#endif
+
 namespace moe {
     /// Class for for the Dynamic Model of MOE
     class MoeDynamicModel {
@@ -38,12 +42,14 @@ namespace moe {
         private:
         double q_s = 0.0;
         double dist = 0.28024875;
+        double g = 9.81;
 
         // Friction Parameters
         std::vector<double> Fk_coeff = {0.1838, 0.1572, 0.0996, 0.1685};
         std::vector<double> B_coeff = {0.0393, 0.0691, 0.0068, 0.0025};
         // Rotor Inertias
-        std::vector<double> rotor_inertias = {0.0,0.0,0.0,0.0};
+        std::vector<double> rotor_inertias = {1340e-7, 137e-7, 137e-7, 34.7e-7};
+        std::vector<double> joint_etas = {0.4200/4.50, 0.4706/8.75, 0.4735/9.00, 0.2210/6.00};
 
 
         // Functions for dynamic equations
@@ -51,7 +57,7 @@ namespace moe {
         // Function to get M
         Eigen::MatrixXd get_M();
         // Function to get V
-        Eigen::MatrixXd get_V();
+        Eigen::VectorXd get_V();
         // Function to get G
         Eigen::VectorXd get_G();
         // Function to get Friction
@@ -60,6 +66,34 @@ namespace moe {
         Eigen::MatrixXd get_rotor_inertia();
         // Function to get effective mass
         Eigen::MatrixXd get_effective_M();
+
+#ifdef MAHI_MPC
+        public:
+        // Function to get M
+        casadi::SX cas_get_M();
+        // Function to get V
+        casadi::SX cas_get_V();
+        // Function to get G
+        casadi::SX cas_get_G();
+        // Function to get Friction
+        casadi::SX cas_get_Friction();
+        // Function to get the rotor inertia
+        casadi::SX cas_get_rotor_inertia();
+        // Function to get effective mass
+        casadi::SX cas_get_effective_M();
+
+        casadi::SX q0;
+        casadi::SX q1;
+        casadi::SX q2;
+        casadi::SX q3;
+        casadi::SX q0_dot;
+        casadi::SX q1_dot;
+        casadi::SX q2_dot;
+        casadi::SX q3_dot;
+        
+        casadi::SX cas_q;
+        casadi::SX cas_qd;
+#endif
 
     };
 }

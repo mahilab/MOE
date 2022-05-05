@@ -36,19 +36,16 @@ FetchContent_MakeAvailable(mahi-robo)
 FetchContent_Declare(mahi-com GIT_REPOSITORY https://github.com/mahilab/mahi-com.git)
 FetchContent_MakeAvailable(mahi-com)
 
+option(WITH_MAHI_MPC "Turn ON to build mahi-mpc" ON)
+if (WITH_MAHI_MPC)
+    FetchContent_Declare(mahi-mpc GIT_REPOSITORY https://github.com/mahilab/mahi-mpc.git
+                                GIT_TAG origin/main)
+    FetchContent_MakeAvailable(mahi-mpc)
+endif()
 # add definitions
 add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -D_WINSOCK_DEPRECATED_NO_WARNINGS)
 
-# set(SRC_MOE
-#     src/MOE/MahiOpenExo/Joint.cpp
-#     src/MOE/MahiOpenExo/JointHardware.cpp
-#     src/MOE/MahiOpenExo/MahiOpenExoHardware.cpp
-#     src/MOE/MahiOpenExo/JointVirtual.cpp
-#     src/MOE/MahiOpenExo/MahiOpenExoVirtual.cpp
-#     src/MOE/MahiOpenExo/Moe.cpp)
-
 file(GLOB_RECURSE INC_MOE "include/*.hpp")
-
 
 add_library(moe)
 add_library(moe::moe ALIAS moe)
@@ -69,12 +66,28 @@ PRIVATE
 ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(moe mahi::daq mahi::robo mahi::com)
+add_subdirectory(src/MOE/MahiOpenExo)
 
-if(MOE_EXAMPLES)
-message("Building MOE Examples")
-add_subdirectory(examples)
+target_link_libraries(moe mahi::daq mahi::robo mahi::com)
+if (WITH_MAHI_MPC)
+    target_link_libraries(moe mahi::mpc)
 endif()
 
-add_subdirectory(setup)
-add_subdirectory(src/MOE/MahiOpenExo)
+if(MOE_EXAMPLES)
+    message("Building MOE Examples")
+    add_subdirectory(examples)
+    add_subdirectory(setup)
+endif()
+
+# function(link_mpc mpc_target_name)
+# add_custom_command(
+#     TARGET ${mpc_target_name} POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#             ${CMAKE_SOURCE_DIR}/build/_deps/casadi-build/$<CONFIG>/casadi.dll
+#             $<TARGET_FILE_DIR:${mpc_target_name}>)     
+# add_custom_command(
+#     TARGET ${mpc_target_name} POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#             ${CMAKE_SOURCE_DIR}/build/_deps/casadi-build/$<CONFIG>/casadi_nlpsol_ipopt.dll
+#             $<TARGET_FILE_DIR:${mpc_target_name}>)     
+# endfunction()
