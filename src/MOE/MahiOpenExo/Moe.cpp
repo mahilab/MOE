@@ -79,7 +79,6 @@ namespace moe {
             m_joint_positions[i] = moe_joints[i]->get_position();
             m_joint_velocities[i] = moe_joints[i]->get_velocity();
         }
-        moe_dynamic_model.update(m_joint_positions, m_joint_velocities);
     }
 
     ///////////////////////// Mass Properties and Model Calculations /////////////////////////
@@ -87,7 +86,7 @@ namespace moe {
     void Moe::set_subject_parameters(UserParams newParams){
         moe_dynamic_model.set_user_params(newParams);
         // Update mass props based on new parameters
-        moe_dynamic_model.update_J0();
+        // moe_dynamic_model.update_J0();
     }
 
     // SubjectParameters Moe::get_subject_parameters(){

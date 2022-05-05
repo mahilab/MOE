@@ -45,6 +45,7 @@ void to_state(state& current_state_, const state next_state_, WayPoint current_p
 }
 
 int main(int argc, char* argv[]) {
+    // std::cout << "start";
     // register ctrl-c handler
     register_ctrl_handler(handler);
 
