@@ -36,7 +36,7 @@ FetchContent_MakeAvailable(mahi-robo)
 FetchContent_Declare(mahi-com GIT_REPOSITORY https://github.com/mahilab/mahi-com.git)
 FetchContent_MakeAvailable(mahi-com)
 
-option(WITH_MAHI_MPC "Turn ON to build mahi-mpc" ON)
+option(WITH_MAHI_MPC "Turn ON to build mahi-mpc" OFF)
 if (WITH_MAHI_MPC)
     FetchContent_Declare(mahi-mpc GIT_REPOSITORY https://github.com/mahilab/mahi-mpc.git
                                 GIT_TAG origin/main)
