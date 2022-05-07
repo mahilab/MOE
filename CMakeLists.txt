@@ -36,6 +36,9 @@ FetchContent_MakeAvailable(mahi-robo)
 FetchContent_Declare(mahi-com GIT_REPOSITORY https://github.com/mahilab/mahi-com.git)
 FetchContent_MakeAvailable(mahi-com)
 
+# this normally gets set in the mahi-mpc cmakelists, but if you want to test the moe-mpc examples
+# here, you need to set this on. Just make sure to not push it to github or else everyone that
+# uses moe will have to build casadi
 option(WITH_MAHI_MPC "Turn ON to build mahi-mpc" OFF)
 if (WITH_MAHI_MPC)
     FetchContent_Declare(mahi-mpc GIT_REPOSITORY https://github.com/mahilab/mahi-mpc.git
