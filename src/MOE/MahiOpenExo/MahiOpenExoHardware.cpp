@@ -17,7 +17,7 @@ namespace moe {
     ///////////////////////// STANDARD CLASS FUNCTIONS AND PARAMS /////////////////////////
 
     MahiOpenExoHardware::MahiOpenExoHardware(MoeConfigurationHardware configuration) :
-        Moe(),
+        MahiOpenExo(),
         config_hw(configuration)
         {
 

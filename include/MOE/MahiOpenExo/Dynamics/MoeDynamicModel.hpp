@@ -28,6 +28,9 @@ namespace moe {
         MoeMassProperties moe_mass_props;
         /// Stuct containing the user params
         UserParams user_params;
+        /// Bools seeing if the model is initialized
+        bool is_J0_initialized = false;
+        bool is_arm_initialized = false;
 
         public:
         // Function to update the state
@@ -66,7 +69,10 @@ namespace moe {
         Eigen::MatrixXd get_rotor_inertia();
         // Function to get effective mass
         Eigen::MatrixXd get_effective_M();
-
+        // General function that combines a vector of joint properties that move together
+        JointProperties combine_bodies(std::vector<JointProperties> bodies);
+        // Function that reads in jsons for the arm properties and adds them to moe_mass_props
+        void add_arm_props(std::string folder_path);
 #ifdef MAHI_MPC
         public:
         // Function to get M

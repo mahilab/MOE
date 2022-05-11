@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
     // construct and config MOE   //
     /////////////////////////////////
 
-    std::shared_ptr<Moe> moe = nullptr;
+    std::shared_ptr<MahiOpenExo> moe = nullptr;
     std::shared_ptr<Q8Usb> daq = nullptr;
     
     if(result.count("virtual") > 0){

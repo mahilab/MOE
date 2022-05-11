@@ -13,7 +13,7 @@ namespace moe {
     ///////////////////////// STANDARD CLASS FUNCTIONS AND PARAMS /////////////////////////
     
     MahiOpenExoVirtual::MahiOpenExoVirtual(MoeConfigurationVirtual configuration) :
-        Moe(),
+        MahiOpenExo(),
         config_vr(configuration)
     {
 

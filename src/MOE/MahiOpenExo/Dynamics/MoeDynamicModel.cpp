@@ -26,61 +26,15 @@ namespace moe {
     }
 
     void MoeDynamicModel::update_J0() {
-        // x and y position of the counterweight and slider
-        // double x_cw = cw_mass_props.Pcx;
-        double y_cw = moe_mass_props.J0_counterweight.Pcy + (user_params.cw_location - 4)*0.01270000;
-        // double x_sl = sl_mass_props.Pcx;
-        double y_sl = moe_mass_props.J0_slider.Pcy + (user_params.forearm_location-3)*0.005;
-        // calculate the new center of mass for moe_mass_props.J0
-        double newPcx = (moe_mass_props.J0_counterweight.m*moe_mass_props.J0_counterweight.Pcx + moe_mass_props.J0_slider.m*moe_mass_props.J0_slider.Pcx + moe_mass_props.J0_main.m*moe_mass_props.J0_main.Pcx)/(moe_mass_props.J0_counterweight.m + moe_mass_props.J0_slider.m + moe_mass_props.J0_main.m);
-        double newPcy = (moe_mass_props.J0_counterweight.m*y_cw + moe_mass_props.J0_slider.m*y_sl + moe_mass_props.J0_main.m*moe_mass_props.J0_main.Pcy)/(moe_mass_props.J0_counterweight.m + moe_mass_props.J0_slider.m + moe_mass_props.J0_main.m);
-        double newPcz = (moe_mass_props.J0_counterweight.m*moe_mass_props.J0_counterweight.Pcz + moe_mass_props.J0_slider.m*moe_mass_props.J0_slider.Pcz + moe_mass_props.J0_main.m*moe_mass_props.J0_main.Pcz)/(moe_mass_props.J0_counterweight.m + moe_mass_props.J0_slider.m + moe_mass_props.J0_main.m);
-        // Parallel Axis Thm (about new center of mass)
-        // Icxx
-        double Icxx_cw = moe_mass_props.J0_counterweight.Icxx + moe_mass_props.J0_counterweight.m*((y_cw-newPcy)*(y_cw-newPcy) + (moe_mass_props.J0_counterweight.Pcz-newPcz)*(moe_mass_props.J0_counterweight.Pcz-newPcz));
-        double Icxx_sl = moe_mass_props.J0_slider.Icxx + moe_mass_props.J0_slider.m*((y_sl-newPcy)*(y_sl-newPcy) + (moe_mass_props.J0_slider.Pcz-newPcz)*(moe_mass_props.J0_slider.Pcz-newPcz));
-        double Icxx_main = moe_mass_props.J0_main.Icxx + moe_mass_props.J0_main.m*((moe_mass_props.J0_main.Pcy-newPcy)*(moe_mass_props.J0_main.Pcy-newPcy) + (moe_mass_props.J0_main.Pcz-newPcz)*(moe_mass_props.J0_main.Pcz-newPcz));
-        double newIcxx = Icxx_cw + Icxx_sl + Icxx_main;
-        // Icyy
-        double Icyy_cw = moe_mass_props.J0_counterweight.Icyy + moe_mass_props.J0_counterweight.m*((moe_mass_props.J0_counterweight.Pcx-newPcx)*(moe_mass_props.J0_counterweight.Pcx-newPcx) + (moe_mass_props.J0_counterweight.Pcz-newPcz)*(moe_mass_props.J0_counterweight.Pcz-newPcz));
-        double Icyy_sl = moe_mass_props.J0_slider.Icyy + moe_mass_props.J0_slider.m*((moe_mass_props.J0_slider.Pcx-newPcx)*(moe_mass_props.J0_slider.Pcx-newPcx) + (moe_mass_props.J0_slider.Pcz-newPcz)*(moe_mass_props.J0_slider.Pcz-newPcz));
-        double Icyy_main = moe_mass_props.J0_main.Icyy + moe_mass_props.J0_main.m*((moe_mass_props.J0_main.Pcx-newPcx)*(moe_mass_props.J0_main.Pcx-newPcx) + (moe_mass_props.J0_main.Pcz-newPcz)*(moe_mass_props.J0_main.Pcz-newPcz));
-        double newIcyy = Icyy_cw + Icyy_sl + Icyy_main;
-        
-        // Iczz
-        double Iczz_cw = moe_mass_props.J0_counterweight.Iczz + moe_mass_props.J0_counterweight.m*((moe_mass_props.J0_counterweight.Pcx-newPcx)*(moe_mass_props.J0_counterweight.Pcx-newPcx)+(y_cw-newPcy)*(y_cw-newPcy));
-        double Iczz_sl = moe_mass_props.J0_slider.Iczz + moe_mass_props.J0_slider.m*((moe_mass_props.J0_slider.Pcx-newPcx)*(moe_mass_props.J0_slider.Pcx-newPcx)+(y_sl-newPcy)*(y_sl-newPcy));
-        double Iczz_main = moe_mass_props.J0_main.Iczz + moe_mass_props.J0_main.m*((moe_mass_props.J0_main.Pcx-newPcx)*(moe_mass_props.J0_main.Pcx-newPcx)+(moe_mass_props.J0_main.Pcy-newPcy)*(moe_mass_props.J0_main.Pcy-newPcy));
-        double newIczz = Iczz_cw + Iczz_sl + Iczz_main;
-
-        // Icxy
-        double Icxy_cw = moe_mass_props.J0_counterweight.Icxy + moe_mass_props.J0_counterweight.m*((moe_mass_props.J0_counterweight.Pcx-newPcx)*(y_cw-newPcy));
-        double Icxy_sl = moe_mass_props.J0_slider.Icxy + moe_mass_props.J0_slider.m*((moe_mass_props.J0_slider.Pcx-newPcx)*(y_sl-newPcy));
-        double Icxy_main = moe_mass_props.J0_main.Icxy + moe_mass_props.J0_main.m*((moe_mass_props.J0_main.Pcx-newPcx)*(moe_mass_props.J0_main.Pcy-newPcy));
-        double newIcxy = Icxy_cw + Icxy_sl + Icxy_main;
-
-        // Icxz
-        double Icxz_cw = moe_mass_props.J0_counterweight.Icxz + moe_mass_props.J0_counterweight.m*((moe_mass_props.J0_counterweight.Pcx-newPcx)*(moe_mass_props.J0_counterweight.Pcz-newPcz));
-        double Icxz_sl = moe_mass_props.J0_slider.Icxz + moe_mass_props.J0_slider.m*((moe_mass_props.J0_slider.Pcx-newPcx)*(moe_mass_props.J0_slider.Pcz-newPcz));
-        double Icxz_main = moe_mass_props.J0_main.Icxz + moe_mass_props.J0_main.m*((moe_mass_props.J0_main.Pcx-newPcx)*(moe_mass_props.J0_main.Pcz-newPcz));
-        double newIcxz = Icxz_cw + Icxz_sl + Icxz_main;
-
-        // Icyz
-        double Icyz_cw = moe_mass_props.J0_counterweight.Icyz + moe_mass_props.J0_counterweight.m*((moe_mass_props.J0_counterweight.Pcy-newPcy)*(moe_mass_props.J0_counterweight.Pcz-newPcz));
-        double Icyz_sl = moe_mass_props.J0_slider.Icyz + moe_mass_props.J0_slider.m*((moe_mass_props.J0_slider.Pcy-newPcy)*(moe_mass_props.J0_slider.Pcz-newPcz));
-        double Icyz_main = moe_mass_props.J0_main.Icyz + moe_mass_props.J0_main.m*((moe_mass_props.J0_main.Pcy-newPcy)*(moe_mass_props.J0_main.Pcz-newPcz));
-        double newIcyz = Icyz_cw + Icyz_sl + Icyz_main;
-        // Set new values to moe_mass_props.J0 (both the joint, and all_props)
-        moe_mass_props.J0.Pcx = newPcx;
-        moe_mass_props.J0.Pcy = newPcy;
-        moe_mass_props.J0.Pcz = newPcz;
-        moe_mass_props.J0.Icxx = newIcxx;
-        moe_mass_props.J0.Icyy = newIcyy;
-        moe_mass_props.J0.Iczz = newIczz;
-        moe_mass_props.J0.Icxy = newIcxy;
-        moe_mass_props.J0.Icxz = newIcxz;
-        moe_mass_props.J0.Icyz = newIcyz;
-        moe_mass_props.J0.m = moe_mass_props.J0_counterweight.m + moe_mass_props.J0_slider.m + moe_mass_props.J0_main.m;        
+        if (is_J0_initialized == false) {
+        moe_mass_props.J0_slider.Pcy += (user_params.forearm_location-3)*0.005;
+        moe_mass_props.J0_counterweight.Pcy += (user_params.cw_location-4)*0.0127;
+        std::vector<JointProperties> bodies = {moe_mass_props.J0_main,moe_mass_props.J0_counterweight,moe_mass_props.J0_slider};
+        moe_mass_props.J0 = combine_bodies(bodies);
+        } else {
+           LOG(mahi::util::Error) << "J0 is already initialized. Returning the values from that initialization.";
+        }
+        is_J0_initialized = true;
     }
 
     void MoeDynamicModel::set_user_params(UserParams newParams) {
@@ -108,6 +62,54 @@ namespace moe {
     Eigen::MatrixXd MoeDynamicModel::get_effective_M() {
         Eigen::MatrixXd effective_M = get_M() + get_rotor_inertia();
         return effective_M;
+    }
+
+    JointProperties MoeDynamicModel::combine_bodies(std::vector<JointProperties> bodies) {
+        auto num_bodies = bodies.size();
+        JointProperties combined_body;
+        for (int i = 0; i < num_bodies; i++) {
+            combined_body.Pcx += bodies[i].Pcx*bodies[i].m;
+            combined_body.Pcy += bodies[i].Pcy*bodies[i].m;
+            combined_body.Pcz += bodies[i].Pcz*bodies[i].m;
+            combined_body.m += bodies[i].m;
+        }
+        combined_body.Pcx = combined_body.Pcx/combined_body.m;
+        combined_body.Pcy = combined_body.Pcy/combined_body.m;
+        combined_body.Pcz = combined_body.Pcz/combined_body.m;
+
+        for (int i = 0; i < num_bodies; i++) {
+            combined_body.Icxx += bodies[i].Icxx + bodies[i].m*((bodies[i].Pcy-combined_body.Pcy)*(bodies[i].Pcy-combined_body.Pcy) + (bodies[i].Pcz-combined_body.Pcz)*(bodies[i].Pcz-combined_body.Pcz));
+            combined_body.Icyy += bodies[i].Icyy + bodies[i].m*((bodies[i].Pcx-combined_body.Pcx)*(bodies[i].Pcx-combined_body.Pcx) + (bodies[i].Pcz-combined_body.Pcz)*(bodies[i].Pcz-combined_body.Pcz));
+            combined_body.Iczz += bodies[i].Iczz + bodies[i].m*((bodies[i].Pcx-combined_body.Pcx)*(bodies[i].Pcx-combined_body.Pcx) + (bodies[i].Pcy-combined_body.Pcy)*(bodies[i].Pcy-combined_body.Pcy));
+            combined_body.Icxy += bodies[i].Icxy + bodies[i].m*((bodies[i].Pcx-combined_body.Pcx)*(bodies[i].Pcy-combined_body.Pcy));
+            combined_body.Icxz += bodies[i].Icxz + bodies[i].m*((bodies[i].Pcx-combined_body.Pcx)*(bodies[i].Pcz-combined_body.Pcz));
+            combined_body.Icyz += bodies[i].Icyz + bodies[i].m*((bodies[i].Pcy-combined_body.Pcy)*(bodies[i].Pcz-combined_body.Pcz));
+        }
+        
+        return combined_body;
+    }
+
+    void MoeDynamicModel::add_arm_props(std::string folder_path) {
+        if (is_arm_initialized == false) {
+            // File path for each json
+            std::string efe_file_path = folder_path + "/J0_arm_mass_properties.json";
+            std::string fps_file_path = folder_path + "/J1_arm_mass_properties.json";
+            std::string wfe_file_path = folder_path + "/J2_arm_mass_properties.json";
+            std::string wru_file_path = folder_path + "/J3_arm_mass_properties.json";
+            // Make a vector of all the arm properties
+            std::vector<JointProperties> arm_props = {JointProperties::get_from_json(efe_file_path),
+                                                      JointProperties::get_from_json(fps_file_path),
+                                                      JointProperties::get_from_json(wfe_file_path),
+                                                      JointProperties::get_from_json(wru_file_path)};
+            // Combine the arm properties to moe_mass_props
+            moe_mass_props.J0 = combine_bodies({moe_mass_props.J0,arm_props[0]});
+            moe_mass_props.J1 = combine_bodies({moe_mass_props.J1,arm_props[1]});
+            moe_mass_props.J2 = combine_bodies({moe_mass_props.J2,arm_props[2]});
+            moe_mass_props.J3 = combine_bodies({moe_mass_props.J3,arm_props[3]});
+            is_arm_initialized = true;
+        } else {
+           LOG(mahi::util::Error) << "Arm props are already initialized. Returning those values.";
+        }
     }
 
 #ifdef MAHI_MPC

@@ -17,15 +17,15 @@
 
 namespace moe {
     /// Class for controlling the Mahi Open Exo
-    class Moe : public mahi::util::Device{
+    class MahiOpenExo : public mahi::util::Device{
 
     ///////////////////////// STANDARD CLASS FUNCTIONS AND PARAMS /////////////////////////
 
     public:
         /// Constructor
-        Moe(MoeParameters parameters = MoeParameters());
+        MahiOpenExo(MoeParameters parameters = MoeParameters());
         /// Destructor
-        ~Moe();
+        ~MahiOpenExo();
         /// returns a pointer to robot joint [i]
         Joint* operator[](size_t joint_number){return moe_joints[joint_number].get();}
         /// Manually zero the encoders

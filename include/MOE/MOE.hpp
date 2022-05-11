@@ -1,5 +1,5 @@
 #pragma once
-#include<MOE/MahiOpenExo/Moe.hpp>
+#include<MOE/MahiOpenExo/MahiOpenExo.hpp>
 #include<MOE/MahiOpenExo/MahiOpenExoVirtual.hpp>
 #include<MOE/MahiOpenExo/MahiOpenExoHardware.hpp>
 #include<MOE/MahiOpenExo/Joint.hpp>

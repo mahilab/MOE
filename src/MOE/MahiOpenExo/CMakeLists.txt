@@ -5,7 +5,7 @@ target_sources(moe
     JointVirtual.cpp
     MahiOpenExoHardware.cpp
     MahiOpenExoVirtual.cpp
-    Moe.cpp
+    MahiOpenExo.cpp
 )
 
 add_subdirectory(Dynamics)

@@ -1,4 +1,4 @@
-#include <Moe/MahiOpenExo/Moe.hpp>
+#include <Moe/MahiOpenExo/MahiOpenExo.hpp>
 #include <Moe/MahiOpenExo/Joint.hpp>
 #include <Mahi/Daq/Quanser/Q8Usb.hpp>
 #include <Mahi/Util/Math/Functions.hpp>
@@ -16,11 +16,10 @@ namespace moe {
 
     ///////////////////////// STANDARD CLASS FUNCTIONS AND PARAMS /////////////////////////
 
-    Moe::Moe(MoeParameters parameters) :
+    MahiOpenExo::MahiOpenExo(MoeParameters parameters) :
         Device("mahi_open_exo"),
         params_(parameters)
     {
-        moe_dynamic_model.update_J0();
         for (int i = 0; i < n_j; i++) {
             m_joint_positions.push_back(0.0);
             m_joint_velocities.push_back(0.0);
@@ -29,13 +28,13 @@ namespace moe {
         
     }
 
-    Moe::~Moe() {
+    MahiOpenExo::~MahiOpenExo() {
         if (is_enabled()) {
             disable();
         }
     }
 
-    bool Moe::on_enable() {
+    bool MahiOpenExo::on_enable() {
         for (auto it = moe_joints.begin(); it != moe_joints.end(); ++it) {
             if (!(*it)->enable()){
                 LOG(Error) << "Failed to enable joints. Disabling MOE.";
@@ -46,7 +45,7 @@ namespace moe {
         return true;
     }
 
-    bool Moe::on_disable() {
+    bool MahiOpenExo::on_disable() {
         bool successful = true;
         for(auto it = moe_joints.begin(); it != moe_joints.end(); ++it){
             if (!(*it)->disable()){
@@ -57,7 +56,7 @@ namespace moe {
         return successful;
     }
 
-    void Moe::calibrate(volatile std::atomic<bool>& stop) {
+    void MahiOpenExo::calibrate(volatile std::atomic<bool>& stop) {
         // to use this function, move all joints to their maximum value and run
         daq_enable();
         // std::vector<int32> encoder_offsets = { 0, 0, 0, 0};
@@ -70,7 +69,7 @@ namespace moe {
         stop = true;
     }
 
-    void Moe::update(){
+    void MahiOpenExo::update(){
         for (size_t i = 0; i < n_j; i++){
             // filters velocity if the joint uses software filter (only an option for hardware)
             moe_joints[i]->filter_velocity();
@@ -83,7 +82,7 @@ namespace moe {
 
     ///////////////////////// Mass Properties and Model Calculations /////////////////////////
 
-    void Moe::set_subject_parameters(UserParams newParams){
+    void MahiOpenExo::set_subject_parameters(UserParams newParams){
         moe_dynamic_model.set_user_params(newParams);
         // Update mass props based on new parameters
         // moe_dynamic_model.update_J0();
@@ -94,7 +93,7 @@ namespace moe {
     // }
 
 
-    std::vector<double> Moe::calc_grav_torques(){
+    std::vector<double> MahiOpenExo::calc_grav_torques(){
         std::vector<double> grav_torques = {0.0,0.0,0.0,0.0};
         Eigen::VectorXd eig_grav_torques = moe_dynamic_model.get_G();
         for (size_t i = 0; i < n_j; i++){
@@ -105,7 +104,7 @@ namespace moe {
 
     ///////////////////////// SMOOTH REFERENCE TRAJECTORY CLASS AND INSTANCES /////////////////////////
 
-    Moe::SmoothReferenceTrajectory::SmoothReferenceTrajectory(std::vector<double> speed, std::vector<double> ref_pos, std::vector<bool> active_dofs) :
+    MahiOpenExo::SmoothReferenceTrajectory::SmoothReferenceTrajectory(std::vector<double> speed, std::vector<double> ref_pos, std::vector<bool> active_dofs) :
         speed_(speed),
         n_dof(speed.size()),
         ref_(ref_pos),
@@ -116,7 +115,7 @@ namespace moe {
             m_is_valid = (n_dof == speed_.size() && n_dof == ref_.size());
         }
 
-    void Moe::SmoothReferenceTrajectory::start(std::vector<double> current_pos, Time current_time) {
+    void MahiOpenExo::SmoothReferenceTrajectory::start(std::vector<double> current_pos, Time current_time) {
         if (m_ref_init) {
             m_started = true;
             prev_ref_ = current_pos;
@@ -127,14 +126,14 @@ namespace moe {
         }
     }
 
-    void Moe::SmoothReferenceTrajectory::start(std::vector<double> ref_pos, std::vector<double> current_pos, Time current_time) {
+    void MahiOpenExo::SmoothReferenceTrajectory::start(std::vector<double> ref_pos, std::vector<double> current_pos, Time current_time) {
         m_started = true;
         prev_ref_ = current_pos;
         ref_ = ref_pos;
         start_time_ = current_time;
     }
 
-    void Moe::SmoothReferenceTrajectory::set_ref(std::vector<double> ref_pos, Time current_time) {
+    void MahiOpenExo::SmoothReferenceTrajectory::set_ref(std::vector<double> ref_pos, Time current_time) {
         if (!m_started) {
             print("ERROR: Cannot Call set_ref() before start().");
         }
@@ -150,7 +149,7 @@ namespace moe {
         }
     }
 
-    double Moe::SmoothReferenceTrajectory::calculate_smooth_ref(std::size_t dof, Time current_time) {
+    double MahiOpenExo::SmoothReferenceTrajectory::calculate_smooth_ref(std::size_t dof, Time current_time) {
         if (m_started) {
             if (ref_[dof] == prev_ref_[dof]) {
                 return ref_[dof];
@@ -163,18 +162,18 @@ namespace moe {
         }
     }
 
-    bool Moe::SmoothReferenceTrajectory::is_reached(std::vector<double> current_position, std::vector<double> tolerance){
+    bool MahiOpenExo::SmoothReferenceTrajectory::is_reached(std::vector<double> current_position, std::vector<double> tolerance){
         std::vector<char> check_dofs(n_dof,1);
         return check_goal_pos(ref_, current_position, check_dofs, tolerance, false);
     }
 
-    void Moe::SmoothReferenceTrajectory::stop() {
+    void MahiOpenExo::SmoothReferenceTrajectory::stop() {
         m_started = false;
     }    
     
     ///////////////////////// TORQUE SETTING FUNCTIONS /////////////////////////
 
-    std::vector<double> Moe::set_smooth_pos_ctrl_torques(SmoothReferenceTrajectory& ref, Time current_time) {
+    std::vector<double> MahiOpenExo::set_smooth_pos_ctrl_torques(SmoothReferenceTrajectory& ref, Time current_time) {
         std::vector<double> command_torques(n_j, 0.0);
 
         size_t num_active = 0;
@@ -194,7 +193,7 @@ namespace moe {
 
         return command_torques;
     }
-    std::vector<double> Moe::calc_pos_ctrl_torques(std::vector<double> ref, std::vector<bool> active) {
+    std::vector<double> MahiOpenExo::calc_pos_ctrl_torques(std::vector<double> ref, std::vector<bool> active) {
         std::vector<double> command_torques(n_j,0.0);
 
         if(std::count(active.begin(),active.end(),true) != ref.size()){
@@ -215,8 +214,8 @@ namespace moe {
 
         return command_torques;
     }
-    std::vector<double> Moe::set_pos_ctrl_torques(std::vector<double> ref, std::vector<bool> active) {
-        std::vector<double> command_torques = Moe::calc_pos_ctrl_torques(ref,active);
+    std::vector<double> MahiOpenExo::set_pos_ctrl_torques(std::vector<double> ref, std::vector<bool> active) {
+        std::vector<double> command_torques = calc_pos_ctrl_torques(ref,active);
         // std::vector<double> command_torques(n_j,0.0);
 
         // if(std::count(active.begin(), active.end(), true) != ref.size()){
@@ -239,7 +238,7 @@ namespace moe {
         return command_torques;
     }
 
-    void Moe::set_raw_joint_torques(std::vector<double> new_torques) {
+    void MahiOpenExo::set_raw_joint_torques(std::vector<double> new_torques) {
         
         // update reference
         m_joint_torques = new_torques;
@@ -249,7 +248,7 @@ namespace moe {
         }
     }
 
-    void Moe::set_high_gains(std::vector<bool> active){
+    void MahiOpenExo::set_high_gains(std::vector<bool> active){
         std::vector<double> high_gains = {2.0,3.0,3.0,3.0};
         for (std::size_t i=0; i<n_j; ++i) {
             if (active[i]){
@@ -259,7 +258,7 @@ namespace moe {
         }
     }
 
-    void Moe::set_normal_gains(std::vector<bool> active){
+    void MahiOpenExo::set_normal_gains(std::vector<bool> active){
         for (std::size_t i=0; i<n_j; ++i) {
             if (active[i]){
                 joint_pd_controllers_[i].kp = gains_P[i];
@@ -270,17 +269,17 @@ namespace moe {
 
     /////////////////// GOAL CHECKING FUNCTIONS ///////////////////
 
-    bool Moe::check_joint_goal_pos(std::vector<double> goal_pos, std::vector<char> check_dof, bool print_output) const {
+    bool MahiOpenExo::check_joint_goal_pos(std::vector<double> goal_pos, std::vector<char> check_dof, bool print_output) const {
         return check_goal_pos(goal_pos, get_joint_positions(), check_dof, m_goal_err_tol, print_output);
     }
 
     /////////////////// LIMIT CHECKING ON THE MEII ///////////////////
 
-    bool Moe::any_limit_exceeded(){
+    bool MahiOpenExo::any_limit_exceeded(){
         return (any_velocity_limit_exceeded() || any_torque_limit_exceeded());
     }
 
-    bool Moe::any_velocity_limit_exceeded(){
+    bool MahiOpenExo::any_velocity_limit_exceeded(){
         bool exceeded = false;
         for (auto it = moe_joints.begin(); it != moe_joints.end(); ++it) {
             if ((*it)->velocity_limit_exceeded())
@@ -289,7 +288,7 @@ namespace moe {
         return exceeded;
     }
 
-    bool Moe::any_torque_limit_exceeded(){
+    bool MahiOpenExo::any_torque_limit_exceeded(){
         bool exceeded = false;
         for (auto it = moe_joints.begin(); it != moe_joints.end(); ++it) {
             if ((*it)->torque_limit_exceeded())
@@ -300,7 +299,7 @@ namespace moe {
 
     //////////////// MISC USEFUL UTILITY FUNCTIONS ////////////////
 
-    bool Moe::check_goal_pos(std::vector<double> goal_pos, std::vector<double> current_pos, std::vector<char> check_dof, std::vector<double> error_tol, bool print_output) {
+    bool MahiOpenExo::check_goal_pos(std::vector<double> goal_pos, std::vector<double> current_pos, std::vector<char> check_dof, std::vector<double> error_tol, bool print_output) {
 
         assert((goal_pos.size() == current_pos.size()) && ((goal_pos.size() == check_dof.size())) && (goal_pos.size() == error_tol.size()));
 
@@ -318,7 +317,7 @@ namespace moe {
         return goal_reached;
     }
 
-    std::vector<double> Moe::copy_eigvec_to_stdvec(const Eigen::VectorXd& eigen_vec) {
+    std::vector<double> MahiOpenExo::copy_eigvec_to_stdvec(const Eigen::VectorXd& eigen_vec) {
         std::vector<double> std_vec(eigen_vec.size());
         for (int i = 0; i < eigen_vec.size(); ++i) {
             std_vec[i] = eigen_vec[i];
@@ -326,7 +325,7 @@ namespace moe {
         return std_vec;
     }
 
-    Eigen::VectorXd Moe::copy_stdvec_to_eigvec(const std::vector<double>& std_vec) {
+    Eigen::VectorXd MahiOpenExo::copy_stdvec_to_eigvec(const std::vector<double>& std_vec) {
         Eigen::VectorXd eigen_vec(std_vec.size());
         for (size_t i = 0; i < std_vec.size(); ++i) {
             eigen_vec[i] = std_vec[i];
@@ -334,7 +333,7 @@ namespace moe {
         return eigen_vec;
     }
 
-    void Moe::calibrate_auto(volatile std::atomic<bool>& stop){
+    void MahiOpenExo::calibrate_auto(volatile std::atomic<bool>& stop){
         mahi::util::print("Begining Calibration");
         // destinations for the joints after setting calibration
         std::array<double,n_j> neutral_points = {-35*DEG2RAD, 0, 0, 0};

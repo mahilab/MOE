@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
 
     // making DAQ, using command line arguments, connect to DAQ & MOE, turn on/off motors
 
-    std::shared_ptr<Moe> moe = nullptr;
+    std::shared_ptr<MahiOpenExo> moe = nullptr;
     std::shared_ptr<Q8Usb> daq = nullptr;
     
     if(result.count("virtual") > 0){
