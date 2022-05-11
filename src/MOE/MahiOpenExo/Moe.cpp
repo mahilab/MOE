@@ -558,11 +558,15 @@ namespace moe {
             
             // write all DAQs
             daq_write_all();
-            // daq_watchdog_kick();
-            // check joint velocity limits
+
+            for (const auto &vel_safety_check : get_joint_velocities()) {
+                if (abs(vel_safety_check) > vel_ref*4.0){
+                    stop = true;
+                }
+            }
+            
             if (any_velocity_limit_exceeded() || any_torque_limit_exceeded()) {
                 stop = true;
-                break;
             }
 
             // wait the clock
