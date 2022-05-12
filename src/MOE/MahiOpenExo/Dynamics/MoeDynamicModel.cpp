@@ -26,15 +26,23 @@ namespace moe {
     }
 
     void MoeDynamicModel::update_J0() {
-        if (is_J0_initialized == false) {
-        moe_mass_props.J0_slider.Pcy += (user_params.forearm_location-3)*0.005;
-        moe_mass_props.J0_counterweight.Pcy += (user_params.cw_location-4)*0.0127;
-        std::vector<JointProperties> bodies = {moe_mass_props.J0_main,moe_mass_props.J0_counterweight,moe_mass_props.J0_slider};
-        moe_mass_props.J0 = combine_bodies(bodies);
-        } else {
-           LOG(mahi::util::Error) << "J0 is already initialized. Returning the values from that initialization.";
+        if(!is_arm_initialized){
+            static double original_slider_pcy = moe_mass_props.J0_slider.Pcy;
+            static double original_counterweight_pcy = moe_mass_props.J0_counterweight.Pcy;
+
+            moe_mass_props.J0_slider.Pcy = original_slider_pcy + (user_params.forearm_location-3)*0.005;
+            moe_mass_props.J0_counterweight.Pcy = original_counterweight_pcy + (user_params.cw_location-4)*0.0127;
+            std::vector<JointProperties> bodies = {moe_mass_props.J0_main,moe_mass_props.J0_counterweight,moe_mass_props.J0_slider};
+            moe_mass_props.J0 = combine_bodies(bodies);
+
+            if (is_J0_initialized) {
+                LOG(mahi::util::Warning) << "J0 is already initialized. you are overwriting previous mass properties.";
+            }
+            is_J0_initialized = true;
         }
-        is_J0_initialized = true;
+        else{
+            LOG(mahi::util::Error) << "Cannot reinitialize J0 after adding arm properties.";
+        }
     }
 
     void MoeDynamicModel::set_user_params(UserParams newParams) {
