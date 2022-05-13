@@ -74,7 +74,7 @@ namespace moe {
 
     JointProperties MoeDynamicModel::combine_bodies(std::vector<JointProperties> bodies) {
         auto num_bodies = bodies.size();
-        JointProperties combined_body;
+        JointProperties combined_body{0,0,0,0,0,0,0,0,0,0};
         for (int i = 0; i < num_bodies; i++) {
             combined_body.Pcx += bodies[i].Pcx*bodies[i].m;
             combined_body.Pcy += bodies[i].Pcy*bodies[i].m;

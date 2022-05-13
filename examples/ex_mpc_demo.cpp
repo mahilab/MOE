@@ -41,7 +41,7 @@ void to_state(state& current_state_, const state next_state_, WayPoint current_p
 }
 
 // returns vector of position and velocity of moe
-std::vector<double> get_state(std::shared_ptr<Moe> moe_ptr){
+std::vector<double> get_state(std::shared_ptr<MahiOpenExo> moe_ptr){
     std::vector<double> state;
     for (size_t i = 0; i < moe_ptr->n_j; i++){
         state.push_back(moe_ptr->get_joint_position(i));
