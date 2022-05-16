@@ -158,11 +158,21 @@ int main(int argc, char* argv[]) {
 
     casadi::Dict solver_opts;
     
-                        //      0     1     2     3   
-    std::vector<double> Q = {  10,   25,   20,   60,  // pos
-                             0.10, 0.05, 0.05, 0.05}; // vel
-    std::vector<double> R = {   3,   20,   40,   40}; // del_U
-    std::vector<double> Rm ={  0,   0,   0,   0}; // magnitude
+    std::vector<double> Q, R, Rm;
+    if (result.count("linear")){
+        //      0     1     2     3   
+        Q = {  25,   35,   45,   60,  // pos
+             0.10, 0.03, 0.02, 0.01}; // vel
+        R = {   2,   10,   30,   30}; // del_U
+        Rm ={   0,    0,    0,    0}; // magnitude
+    }
+    else{
+        //      0     1     2     3   
+        Q = {  25,   35,   45,   60,  // pos
+             0.10, 0.03, 0.02, 0.01}; // vel
+        R = {   2,   10,   30,   30}; // del_U
+        Rm ={   0,   0,   0,   0}; // magnitude
+    }
 
     if (result.count("q_vec")) Q = result["q_vec"].as<std::vector<double>>();
     if (result.count("r_vec")) R = result["r_vec"].as<std::vector<double>>();

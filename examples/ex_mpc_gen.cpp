@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
     std::vector<double> u_max(u.size1(), inf);
 
     // settings for multiple shooting constructions
-    mahi::util::Time time_step  = mahi::util::milliseconds(linear ? 2 : 10);
+    mahi::util::Time time_step  = mahi::util::milliseconds(linear ? 2 : 2);
     int num_shooting_nodes = 25;
 
     ModelParameters model_parameters(model_name, // name
