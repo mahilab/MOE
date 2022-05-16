@@ -78,6 +78,7 @@ namespace moe {
             m_joint_positions[i] = moe_joints[i]->get_position();
             m_joint_velocities[i] = moe_joints[i]->get_velocity();
         }
+        moe_dynamic_model.update(m_joint_positions,m_joint_velocities);
     }
 
     ///////////////////////// Mass Properties and Model Calculations /////////////////////////
