@@ -13,6 +13,9 @@ target_link_libraries(ex_rom_CSU moe::moe)
 add_executable(grav_comp ex_grav_comp.cpp)
 target_link_libraries(grav_comp moe::moe)
 
+add_executable(arm_prop_data_collection ex_arm_prop_data_collection.cpp)
+target_link_libraries(arm_prop_data_collection moe::moe)
+
 if(WITH_MAHI_MPC)
     add_executable(mpc_gen ex_mpc_gen.cpp)
     target_link_libraries(mpc_gen mahi::mpc moe::moe)
