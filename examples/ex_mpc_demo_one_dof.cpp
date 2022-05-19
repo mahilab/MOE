@@ -26,6 +26,11 @@ bool handler(CtrlEvent event) {
     return true;
 }
 
+int getIndex(std::vector<int> v, int K)
+{
+    return find(v.begin(), v.end(), K) - v.begin();
+}
+
 void to_state(state& current_state_, const state next_state_, WayPoint current_position_, WayPoint new_position_, Time traj_length_, MinimumJerk& mj_, Clock& ref_traj_clock_) {
     current_position_.set_time(seconds(0));
     new_position_.set_time(traj_length_);
@@ -40,21 +45,24 @@ void to_state(state& current_state_, const state next_state_, WayPoint current_p
 }
 
 // returns vector of position and velocity of moe
-std::vector<double> get_state(std::shared_ptr<MahiOpenExo> moe_ptr, int dof){
+std::vector<double> get_state(std::shared_ptr<MahiOpenExo> moe_ptr, std::vector<int> dof){
     std::vector<double> state;  
-    state.push_back(moe_ptr->get_joint_position(dof));
-    state.push_back(moe_ptr->get_joint_velocity(dof));
+    for (auto i = 0; i < dof.size(); i++) state.push_back(moe_ptr->get_joint_position(dof[i]));
+    for (auto i = 0; i < dof.size(); i++) state.push_back(moe_ptr->get_joint_velocity(dof[i]));
     return state;
 }
 
-std::vector<double> get_traj(double curr_time, int dof, int ns, double step_size, std::vector<double> amps, std::vector<double> freqs, std::vector<double> offsets){
+std::vector<double> get_traj(double curr_time, std::vector<int> dof, int ns, double step_size, std::vector<double> amps, std::vector<double> freqs, std::vector<double> offsets){
     std::vector<double> traj;
     for (auto i = 0; i < ns; i++){
         // push back position
-        traj.push_back(  1.0 * amps[dof] * DEG2RAD * cos(2.0*PI*freqs[dof]*curr_time) + offsets[dof] - amps[dof]*DEG2RAD);
+        for (auto j = 0; j < dof.size(); j++){
+            traj.push_back(  1.0 * amps[dof[j]] * DEG2RAD * cos(2.0*PI*freqs[dof[j]]*curr_time) + offsets[dof[j]] - amps[dof[j]]*DEG2RAD);
+        }
         // push back velocity
-        traj.push_back( -1.0 * amps[dof] * DEG2RAD * 2.0 * PI * freqs[dof]*sin(2.0*PI*freqs[dof]*curr_time));
-        // std::cout << traj.back();
+        for (auto j = 0; j < dof.size(); j++){
+            traj.push_back( -1.0 * amps[dof[j]] * DEG2RAD * 2.0 * PI * freqs[dof[j]]*sin(2.0*PI*freqs[dof[j]]*curr_time));
+        }
         curr_time += step_size;
     }
     
@@ -70,7 +78,7 @@ int main(int argc, char* argv[]) {
         ("n,no_torque", "trajectories are generated, but not torque provided")
         ("v,virtual", "example is virtual and will communicate with the unity sim")
         ("l,linear", "example uses linear mpc model of moe instead of nonlinear")
-        ("d, dof", "Degree of freedom to run MPC on", mahi::util::value<int>())
+        ("d, dof", "Degree of freedom to run MPC on", mahi::util::value<std::vector<int>>())
         ("q, q_vec", "Q vector for MPC control", mahi::util::value<std::vector<double>>())
         ("r, r_vec", "R vector for MPC control", mahi::util::value<std::vector<double>>())
         ("m, rm_vec", "Rm vector for MPC control", mahi::util::value<std::vector<double>>())
@@ -149,28 +157,42 @@ int main(int argc, char* argv[]) {
     casadi::Dict solver_opts;
     
                         //     0    1    2    3   
-    std::vector<double> Q = { 25,  35,  45,  60,  // pos
-                             0.1, 0.1, 0.1, 0.1}; // vel
-    std::vector<double> R = {  2,  10,  30,  30}; // del_U
-    std::vector<double> Rm = { 0,   0,   0,   0}; // del_U
+    std::vector<double> Q_base = {  25,   35,   45,   60,  // pos
+                                  0.10, 0.03, 0.02, 0.01}; // vel
+    std::vector<double> R_base = {  2,  10,  30,  30}; // del_U
+    std::vector<double> Rm_base = { 0,   0,   0,   0}; // del_U
 
-    int dof;
+    std::vector<int> dof;
     if (result.count("dof")){
-        dof = result["dof"].as<int>();
+        dof = result["dof"].as<std::vector<int>>();
+        std::sort(dof.begin(),dof.end());
     }
     else{
         LOG(mahi::util::Error) << "Must specify which DOF is being tested.";
+        return -1;
     }
 
-    Q = {Q[dof], Q[dof+4]};
-    R = {R[dof]};
-    Rm ={Rm[dof]};
+    std::vector<double> Q;
+    std::vector<double> R;
+    std::vector<double> Rm;
+    for (auto i = 0; i < dof.size(); i++){
+        Q.push_back(Q_base[dof[i]]);
+        R.push_back(R_base[dof[i]]);
+        Rm.push_back(Rm_base[dof[i]]);
+    }
+    for (auto i = 0; i < dof.size(); i++) Q.push_back(Q_base[dof[i]+4]);
+
+    // std::cout << Q << std::endl;
+    // std::cout << R << std::endl;
+    // std::cout << Rm << std::endl;
 
     if (result.count("q_vec")) Q = result["q_vec"].as<std::vector<double>>();
     if (result.count("r_vec")) R = result["r_vec"].as<std::vector<double>>();
     if (result.count("rm_vec")) Rm = result["rm_vec"].as<std::vector<double>>();
 
-    ModelControl model_control("linear_moe_j" + std::to_string(dof), Q, R, Rm);
+    std::string dof_string = "";
+    for (auto d : dof) dof_string += std::to_string(d);
+    ModelControl model_control("linear_moe_j" + dof_string, Q, R, Rm);
 
     // register ctrl-c handler
     register_ctrl_handler(handler);
@@ -199,7 +221,7 @@ int main(int argc, char* argv[]) {
                                  ( 00+sin_amplitudes[2]) * DEG2RAD,  // Wrist F/E
                                  (-10+sin_amplitudes[3]) * DEG2RAD}; // wrist R/U
 
-    neutral_point_pos[dof] = offsets[dof];
+    for (auto i = 0; i < dof.size(); i++) neutral_point_pos[dof[i]] = offsets[dof[i]];
 
     WayPoint neutral_point = WayPoint(Time::Zero, neutral_point_pos); 
 
@@ -232,8 +254,6 @@ int main(int argc, char* argv[]) {
 
     std::vector<double> command_torques(4,0.0);
 
-    // std::vector<double> fes_torques(1,0.0);
-
     ref_traj_clock.restart();
 	
 	// enable DAQ and exo
@@ -249,8 +269,11 @@ int main(int argc, char* argv[]) {
     std::vector<std::vector<double>> data;
     std::vector<double> data_line;
 
-    std::vector<double> initial_mpc_state = {neutral_point.get_pos()[dof], 0};
-    std::vector<double> initial_mpc_control = {0};
+    std::vector<double> initial_mpc_state;
+    for (size_t i = 0; i < dof.size(); i++) initial_mpc_state.push_back(neutral_point.get_pos()[dof[i]]);
+    for (size_t i = 0; i < dof.size(); i++) initial_mpc_state.push_back(0.0);
+
+    std::vector<double> initial_mpc_control = std::vector<double>(dof.size(),0);
     
     model_control.set_state(mahi::util::seconds(0), initial_mpc_state, initial_mpc_control, traj);
     model_control.start_calc();
@@ -269,7 +292,6 @@ int main(int argc, char* argv[]) {
 
     while (!stop) {
         static int count = 0;
-        // std::cout << count++ << std::endl;
         // update all DAQ input channels
         moe->daq_read_all();
 
@@ -282,7 +304,9 @@ int main(int argc, char* argv[]) {
 
             traj = get_traj(0.0, dof, model_control.model_parameters.num_shooting_nodes, 
                             model_control.model_parameters.step_size.as_seconds(), sin_amplitudes, sin_frequencies, neutral_point.get_pos());
-            model_control.set_state(mahi::util::seconds(0), get_state(moe, dof), {command_torques[dof]}, traj);
+            std::vector<double> state_torques;
+            for (size_t i = 0; i < dof.size(); i++) state_torques.push_back(command_torques[dof[i]]);
+            model_control.set_state(mahi::util::seconds(0), get_state(moe, dof), state_torques, traj);
         } 
         else {
             ref = neutral_point.get_pos();
@@ -290,7 +314,9 @@ int main(int argc, char* argv[]) {
                             model_control.model_parameters.step_size.as_seconds(), sin_amplitudes, sin_frequencies, neutral_point.get_pos());
             static bool first_time = true;
             first_time = false;
-            model_control.set_state(ref_traj_clock.get_elapsed_time(), get_state(moe, dof), {command_torques[dof]}, traj);
+            std::vector<double> state_torques;
+            for (size_t i = 0; i < dof.size(); i++) state_torques.push_back(command_torques[dof[i]]);
+            model_control.set_state(ref_traj_clock.get_elapsed_time(), get_state(moe, dof), state_torques, traj);
         }
 
         // constrain trajectory to be within range
@@ -308,13 +334,13 @@ int main(int argc, char* argv[]) {
                 command_torques = moe->set_pos_ctrl_torques(ref);
             }
             else {
-                ref.erase(ref.begin()+dof);
+                for (int i = (dof.size()-1); i >= 0; i--) ref.erase(ref.begin()+dof[i]);
                 std::vector<bool> active(moe->n_j, true);
-                active[dof] = false;
+                for (size_t i = 0; i < dof.size(); i++) active[dof[i]] = false;
                 command_torques = moe->set_pos_ctrl_torques(ref, active);
                 auto model_torques = model_control.control_at_time(ref_traj_clock.get_elapsed_time()).u;
                 // fes_torques = {model_torques[1]};
-                command_torques[dof] = model_torques[0];// + fes_torques[0];
+                for (size_t i = 0; i < dof.size(); i++) command_torques[dof[i]] = model_torques[i];
             }
         }
         if (current_state == mpc_state) moe->set_raw_joint_torques(command_torques);
@@ -341,10 +367,30 @@ int main(int argc, char* argv[]) {
         for (const auto &i : moe->get_joint_velocities()) data_line.push_back(i);
         // position ref
         if (current_state != mpc_state) for (auto &&i : ref) data_line.push_back(i);
-        else for (auto i = 0; i < 4; i++) i == dof ? data_line.push_back(traj[0]) : data_line.push_back(neutral_point.get_pos()[i]);
+        else {
+            for (auto i = 0; i < 4; i++) {
+                if(std::count(dof.begin(),dof.end(),i)){
+                    int ii = getIndex(dof, i);
+                    data_line.push_back(traj[ii]);
+                }
+                else{
+                    data_line.push_back(neutral_point.get_pos()[i]);
+                }
+            }
+        }
         // velocity ref
         if (current_state != mpc_state) for (auto &&i : ref) data_line.push_back(0);
-        else for (auto i = 4; i < 8; i++) (i-4) == dof ? data_line.push_back(traj[1]) : data_line.push_back(0);
+        else {
+            for (auto i = 4; i < 8; i++) {
+                if(std::count(dof.begin(),dof.end(),i-4)){
+                    int ii = getIndex(dof, i-4);
+                    data_line.push_back(traj[ii+dof.size()]);
+                }
+                else{
+                    data_line.push_back(neutral_point.get_pos()[i]);
+                }
+            }
+        }
         // command torques
         for (auto &&i : command_torques) data_line.push_back(i);
         data.push_back(data_line);
@@ -365,7 +411,7 @@ int main(int argc, char* argv[]) {
         // wait for remainder of sample period
         t = timer.wait().as_seconds();
     }
-    command_torques = {0.0, 0.0, 0.0, 0.0, 0.0};
+    command_torques = {0.0, 0.0, 0.0, 0.0};
     moe->set_raw_joint_torques(command_torques);
     moe->daq_write_all();
 
@@ -383,7 +429,7 @@ int main(int argc, char* argv[]) {
                                        "EFE ref (rad/s)", "FPS ref (rad/s)", "WFE ref (rad/s)", "WRU ref (rad/s)",
                                           "EFE trq (Nm)",    "FPS trq (Nm)",    "WFE trq (Nm)",    "WRU trq (Nm)"};
 
-    std::string filepath = "data/rom_demo_j" + std::to_string(dof) + "_results.csv";
+    std::string filepath = "data/rom_demo_j" + dof_string + "_results.csv";
     csv_write_row(filepath,header);
     csv_append_rows(filepath,data);
 
