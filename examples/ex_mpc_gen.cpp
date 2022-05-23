@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
     moe_model.set_user_params({3,  // forearm
                                4,  // counterweight position
                                0}); // shoulder rotation
+    moe_model.add_arm_props("C:/Users/nbd2/Box/MAHI_Open_Exo/Model_Optimization/ArmOpt/Nathan6");
     // state vector
     x = SX::vertcat({moe_model.q0,
                      moe_model.q1,
