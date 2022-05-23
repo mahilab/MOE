@@ -258,7 +258,7 @@ int main(int argc, char* argv[]) {
         for (const auto &i : ref) data_line.push_back(i);
         for (const auto &i : moe->get_joint_positions()) data_line.push_back(i);
         for (const auto &i : moe->get_joint_velocities()) data_line.push_back(i);
-        for (const auto &i : moe->get_joint_command_torques(0)) data_line.push_back(i);
+        for (const auto &i : moe->get_joint_command_torques()) data_line.push_back(i);
         for (const auto &trq : act_torque) data_line.push_back(trq);
         for (const auto &trq : grav_torques) data_line.push_back(trq);
         data.push_back(data_line);
