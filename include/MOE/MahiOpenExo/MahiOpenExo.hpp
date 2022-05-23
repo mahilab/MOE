@@ -153,7 +153,7 @@ namespace moe {
         /// get single joint velocity
         double get_joint_velocity(std::size_t index) const {return m_joint_velocities[index];};
         /// read all commanded joint torques (in joint space) from the desired joint. NOTE THAT THESE ARE COMMANDED TORQUE, SO IT IS NOT YET CLAMPED
-        std::vector<double> get_joint_command_torques(std::size_t index) const {return m_joint_torques;};
+        std::vector<double> get_joint_command_torques() const {return m_joint_torques;};
         /// return the commanded joint torque (in joint space) from the desired joint. NOTE THAT THESE ARE COMMANDED TORQUE, SO IT IS NOT YET CLAMPED
         double get_joint_command_torque(std::size_t index) const {return m_joint_torques[index];};
 
