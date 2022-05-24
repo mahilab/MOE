@@ -78,29 +78,20 @@ namespace moe {
             m_joint_positions[i] = moe_joints[i]->get_position();
             m_joint_velocities[i] = moe_joints[i]->get_velocity();
         }
+        // update the state of moe_dynamic_model
         moe_dynamic_model.update(m_joint_positions,m_joint_velocities);
     }
 
     ///////////////////////// Mass Properties and Model Calculations /////////////////////////
 
     void MahiOpenExo::set_subject_parameters(UserParams newParams){
+        // This will also update the mass properties based on the user params
         moe_dynamic_model.set_user_params(newParams);
-        // Update mass props based on new parameters
-        // moe_dynamic_model.update_J0();
     }
 
-    // SubjectParameters Moe::get_subject_parameters(){
-    //     return sub_params;
-    // }
-
-
     std::vector<double> MahiOpenExo::calc_grav_torques(){
-        std::vector<double> grav_torques = {0.0,0.0,0.0,0.0};
-        Eigen::VectorXd eig_grav_torques = moe_dynamic_model.get_G();
-        for (size_t i = 0; i < n_j; i++){
-            grav_torques[i] = eig_grav_torques(i);
-        }
-        return grav_torques;
+        auto eig_G = moe_dynamic_model.get_G();
+        return copy_eigvec_to_stdvec(eig_G);
     }
 
     ///////////////////////// SMOOTH REFERENCE TRAJECTORY CLASS AND INSTANCES /////////////////////////
@@ -217,23 +208,7 @@ namespace moe {
     }
     std::vector<double> MahiOpenExo::set_pos_ctrl_torques(std::vector<double> ref, std::vector<bool> active) {
         std::vector<double> command_torques = calc_pos_ctrl_torques(ref,active);
-        // std::vector<double> command_torques(n_j,0.0);
 
-        // if(std::count(active.begin(), active.end(), true) != ref.size()){
-        //     LOG(Error) << "Size of 'ref' param must equal number of true values in 'active' param (default 4). Commanding 0 torques.";
-        // }
-        // else if(size(active) != 4){
-        //     LOG(Error) << "Size of 'active' param must be 4. Commanding 0 torques.";
-        // }
-        // else{
-        //     size_t active_counter = 0;
-        //     for (std::size_t i = 0; i < n_j; ++i) {
-        //         if (active[i]){
-        //             command_torques[i] = joint_pd_controllers_[i].calculate(ref[active_counter], m_joint_positions[i], 0, m_joint_velocities[i]);
-        //             active_counter++;
-        //         }
-        //     }
-        // }
         set_raw_joint_torques(command_torques);
 
         return command_torques;

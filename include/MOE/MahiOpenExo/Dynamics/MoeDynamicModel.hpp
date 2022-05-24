@@ -22,6 +22,8 @@ namespace moe {
         private:
         // Number of joints
         int n_j = 4;
+        // Variables representing the current state
+        // update function below updates these
         std::vector<double> q = {0.0,0.0,0.0,0.0};
         std::vector<double> qd = {0.0,0.0,0.0,0.0};
         /// Struct containing the mass properties MOE
@@ -43,8 +45,10 @@ namespace moe {
         UserParams get_user_params();
 
         private:
+        // Variables that can be adjusted from set_user_params
         double q_s = 0.0;
         double dist = 0.28024875;
+        // gravity
         double g = 9.81;
 
         // Friction Parameters
