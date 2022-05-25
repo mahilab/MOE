@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
     UserParams badParams = {3,   // forearm position from the distal end of the robot
                                    4,   // cw position
                                    0}; // angle in degrees
-    moe->set_subject_parameters(badParams);
+    moe->set_user_parameters(badParams);
     //moe->update_J0();
 
     while (!stop) {

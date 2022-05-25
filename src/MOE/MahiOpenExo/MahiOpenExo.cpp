@@ -84,7 +84,7 @@ namespace moe {
 
     ///////////////////////// Mass Properties and Model Calculations /////////////////////////
 
-    void MahiOpenExo::set_subject_parameters(UserParams newParams){
+    void MahiOpenExo::set_user_parameters(UserParams newParams){
         // This will also update the mass properties based on the user params
         moe_dynamic_model.set_user_params(newParams);
     }

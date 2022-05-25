@@ -46,7 +46,7 @@ namespace moe {
     
     public:    
         MoeDynamicModel moe_dynamic_model; // class for the dynamic model of MOE 
-        void set_subject_parameters(UserParams newParams); // Sets the private struct sub_params
+        void set_user_parameters(UserParams newParams); // Sets the private struct sub_params
         UserParams get_subject_parameters(); // gets the private struct sub_params
         std::vector<double> calc_grav_torques(); // calculates the gravity vector based on mass props and current joint angles
     
