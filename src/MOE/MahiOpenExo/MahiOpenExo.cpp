@@ -89,6 +89,11 @@ namespace moe {
         moe_dynamic_model.set_user_params(newParams);
     }
 
+    void MahiOpenExo::set_user_parameters_from_json(std::string json_path) {
+        // This will also update the mass properties based on the user params
+        moe_dynamic_model.set_user_params_from_json(json_path);
+    }
+
     std::vector<double> MahiOpenExo::calc_grav_torques(){
         auto eig_G = moe_dynamic_model.get_G();
         return copy_eigvec_to_stdvec(eig_G);

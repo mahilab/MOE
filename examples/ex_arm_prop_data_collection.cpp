@@ -155,7 +155,8 @@ int main(int argc, char* argv[]) {
 
     mj.set_endpoints(start_pos, neutral_point.set_time(state_times[to_neutral]));
 
-    moe->moe_dynamic_model.set_user_params(UserParams{3,4,0});
+    // moe->moe_dynamic_model.set_user_params(UserParams{3,4,0});
+    moe->set_user_parameters(UserParams{3,4,0});
     int active_joint = 3;
     while (!stop) {
         moe->daq_read_all();

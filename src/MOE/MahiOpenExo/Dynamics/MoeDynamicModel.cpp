@@ -58,11 +58,29 @@ namespace moe {
 
     // Gives access to setting the user params based on the current set up
     void MoeDynamicModel::set_user_params(UserParams newParams) {
+        if(newParams.shoulder_location > 12) {
+            LOG(mahi::util::Error) << "Shoulder location greater than 12. Value should be number of notches away from 0 degrees. Not setting parameters.";
+            return;
+        }
+        if(newParams.forearm_location < 3 || newParams.forearm_location > 11) {
+            LOG(mahi::util::Error) << "Forearm location not within bounds. Not setting parameters.";
+            return;
+        }
+        if(newParams.cw_location < 1 || newParams.cw_location > 13) {
+            LOG(mahi::util::Error) << "Counterweight location not within bounds. Not setting parameters.";
+            return;
+        }
         user_params = newParams;
-        q_s = mahi::util::DEG2RAD*user_params.shoulder_ang; // calculate shoulder angle
+        q_s = mahi::util::DEG2RAD*user_params.shoulder_location*15.0; // calculate shoulder angle
         dist = 0.28024875 - 0.005*(user_params.forearm_location - 3); // calculate distance between elbow frame and wrist frames
         // Every time user params are set, update the elbow joint mass props
         update_J0();
+    }
+
+    // Function to set user parameters directly from json
+    void MoeDynamicModel::set_user_params_from_json(std::string json_path) {
+        UserParams newParams = UserParams::get_from_json(json_path);
+        set_user_params(newParams);
     }
 
     // Function to allow access to the current user_params

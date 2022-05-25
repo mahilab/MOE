@@ -41,6 +41,8 @@ namespace moe {
         void update_J0();
         // Function to set the user parameters
         void set_user_params(UserParams newParams);
+        // Function to set the user parameters directly from json
+        void set_user_params_from_json(std::string json_path);
         // Function to get the user parameters
         UserParams get_user_params();
 

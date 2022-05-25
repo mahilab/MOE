@@ -40,6 +40,9 @@ int main(int argc, char* argv[]) {
     // std::cout << arm_properties[0].m << std::endl;
     moe_dynamic_model.add_arm_props("C:/Users/jb139/Box/MAHI_Open_Exo/Model_Optimization/ArmOpt/Nathan");
     std::cout << "New Gravity Torques:" << moe_dynamic_model.get_G() << std::endl;
-    moe_dynamic_model.add_arm_props("C:/Users/jb139/Box/MAHI_Open_Exo/Model_Optimization/ArmOpt/Nathan");
+    // moe_dynamic_model.add_arm_props("C:/Users/jb139/Box/MAHI_Open_Exo/Model_Optimization/ArmOpt/Nathan");
+    std::cout << "HERE" << std::endl;
+    moe_dynamic_model.set_user_params_from_json("C:/Users/jb139/Box/MAHI_Open_Exo/Model_Optimization/ArmOpt/Jeffery2/userParams.json");
+    // std::cout << moe_dynamic_model.user_params.cw_location << std::endl;
     return 0;
 }
