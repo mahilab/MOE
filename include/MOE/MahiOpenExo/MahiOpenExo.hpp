@@ -1,8 +1,7 @@
 #pragma once
 
 #include <MOE/MahiOpenExo/MoeParameters.hpp>
-#include<MOE/MahiOpenExo/SubjectParameters.hpp>
-#include<MOE/MahiOpenExo/MoeMassProperties.hpp>
+#include<MOE/MahiOpenExo/Dynamics/MoeDynamicModel.hpp>
 #include <MOE/MahiOpenExo/Joint.hpp>
 #include <Mahi/Robo/Control/PdController.hpp>
 #include <Mahi/Util/Timing/Time.hpp>
@@ -16,15 +15,15 @@
 
 namespace moe {
     /// Class for controlling the Mahi Open Exo
-    class Moe : public mahi::util::Device{
+    class MahiOpenExo : public mahi::util::Device{
 
     ///////////////////////// STANDARD CLASS FUNCTIONS AND PARAMS /////////////////////////
 
     public:
         /// Constructor
-        Moe(MoeParameters parameters = MoeParameters());
+        MahiOpenExo(MoeParameters parameters = MoeParameters());
         /// Destructor
-        ~Moe();
+        ~MahiOpenExo();
         /// returns a pointer to robot joint [i]
         Joint* operator[](size_t joint_number){return moe_joints[joint_number].get();}
         /// Manually zero the encoders
@@ -46,20 +45,11 @@ namespace moe {
     ///////////////////////// Mass Properties and Model Calculations /////////////////////////
     
     public:    
-        // Struct containing the mass properties of each joint on MOE
-        MoeMassProperties moe_mass_props; 
-        // Structs containing the mass properties of the counterweight, elbow, and slider on MOE
-        MassProperties cw_mass_props = MassProperties({m0_Cw,Pcx0_Cw,Pcy0_Cw,Icxx0_Cw,Icyy0_Cw,Iczz0_Cw,Icxy0_Cw,Icxz0_Cw,Icyz0_Cw});
-        MassProperties main_mass_props = MassProperties({m0_Main,Pcx0_Main,Pcy0_Main,Icxx0_Main,Icyy0_Main,Iczz0_Main,Icxy0_Main,Icxz0_Main,Icyz0_Main});
-        MassProperties sl_mass_props = MassProperties({m0_Sl,Pcx0_Sl,Pcy0_Sl,Icxx0_Sl,Icyy0_Sl,Iczz0_Sl,Icxy0_Sl,Icxz0_Sl,Icyz0_Sl});
-        // Function that gets the forearm distance based on the slider position (in sub_params). Forearm distance is defined as the length from the elbow frame to the wrist frames
-        double get_forearm_dist(); 
-        void update_J0(); // Updates the mass properties of the elbow joint based on sub_params
-        void set_subject_parameters(SubjectParameters newParams); // Sets the private struct sub_params
-        SubjectParameters get_subject_parameters(); // gets the private struct sub_params
+        MoeDynamicModel moe_dynamic_model; // class for the dynamic model of MOE 
+        void set_subject_parameters(UserParams newParams); // Sets the private struct sub_params
+        UserParams get_subject_parameters(); // gets the private struct sub_params
         std::vector<double> calc_grav_torques(); // calculates the gravity vector based on mass props and current joint angles
-    private:
-    SubjectParameters sub_params; // private variable for the subject specific parameters (elbow position, counterweight position, shoulder angle)
+    
     ///////////////////////// SMOOTH REFERENCE TRAJECTORY CLASS AND INSTANCES /////////////////////////
 
     public:
@@ -99,8 +89,6 @@ namespace moe {
             bool m_ref_init = false;
             std::vector<double> prev_ref_;   
         };
-
-        // SmoothReferenceTrajectory rps_init_par_ref_; // rps position controller for initialization
 
         const std::vector<double> joint_speed = {0.25, 0.25, 0.15, 0.15}; // [rad/s] constant spped at which joint reference trajectories are interpolated
 
@@ -159,7 +147,7 @@ namespace moe {
         /// get single joint velocity
         double get_joint_velocity(std::size_t index) const {return m_joint_velocities[index];};
         /// read all commanded joint torques (in joint space) from the desired joint. NOTE THAT THESE ARE COMMANDED TORQUE, SO IT IS NOT YET CLAMPED
-        std::vector<double> get_joint_command_torques(std::size_t index) const {return m_joint_torques;};
+        std::vector<double> get_joint_command_torques() const {return m_joint_torques;};
         /// return the commanded joint torque (in joint space) from the desired joint. NOTE THAT THESE ARE COMMANDED TORQUE, SO IT IS NOT YET CLAMPED
         double get_joint_command_torque(std::size_t index) const {return m_joint_torques[index];};
 

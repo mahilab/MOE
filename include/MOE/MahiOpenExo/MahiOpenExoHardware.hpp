@@ -1,12 +1,12 @@
 #pragma once
 
 #include <MOE/MahiOpenExo/MoeConfigurationHardware.hpp>
-#include <MOE/MahiOpenExo/Moe.hpp>
+#include <MOE/MahiOpenExo/MahiOpenExo.hpp>
 #include <Mahi/Daq/Handle.hpp>
 
 namespace moe{
     /// Class for controlling the Mahi Open Exo
-    class MahiOpenExoHardware : public Moe {
+    class MahiOpenExoHardware : public MahiOpenExo {
 
     ///////////////////////// STANDARD CLASS FUNCTIONS AND PARAMS /////////////////////////
 

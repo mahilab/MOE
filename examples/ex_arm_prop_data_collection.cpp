@@ -1,3 +1,6 @@
+// This code is an example of data collection to find the arm properties. You can copy this into your repository if using for a project
+
+
 #include <MOE/MOE.hpp>
 #include <Mahi/Com.hpp>
 #include <Mahi/Util.hpp>
@@ -15,7 +18,7 @@ using mahi::robo::WayPoint;
 
 enum state{
     to_neutral,
-    stationary
+    gather_data
 };
 
 // create global stop variable CTRL-C handler function
@@ -30,24 +33,24 @@ int main(int argc, char* argv[]) {
     register_ctrl_handler(handler);
 
     // make options
-    Options options("grav_comp.exe","Gravity Comp Demo");
+    Options options("ex_arm_prop_data_collection.exe","Arm property data collection example");
     options.add_options()
-		("c,calibrate", "Calibrates the MAHI Exo-II")
+        ("c,calibrate", "Calibrates the MAHI Exo-II")
         ("n,no_torque", "trajectories are generated, but not torque provided")
         ("v,virtual", "example is virtual and will communicate with the unity sim")
-		("h,help", "Prints this help message");
+        ("h,help", "Prints this help message");
 
-    auto result = options.parse(argc, argv); 
+    auto result = options.parse(argc, argv);
     // if -h, print the help option
     if (result.count("help") > 0) {
         print_var(options.help());
         return 0;
-    }  
+    }
 
     // enable Windows realtime
     enable_realtime();
 
-    Time Ts = milliseconds(1);  // sample period for DAQ
+    Time Ts = milliseconds(1); // sample period for DAQ
 
     std::shared_ptr<MahiOpenExo> moe = nullptr;
     std::shared_ptr<Q8Usb> daq = nullptr;
@@ -56,7 +59,7 @@ int main(int argc, char* argv[]) {
         MoeConfigurationVirtual config_vr;
         moe = std::make_shared<MahiOpenExoVirtual>(config_vr);
     }
-    else{
+    else {
         daq = std::make_shared<Q8Usb>();
         daq->open();
 
@@ -64,16 +67,15 @@ int main(int argc, char* argv[]) {
         std::vector<TTL> idle_values(8,TTL_LOW);
         daq->DO.enable_values.set({0,1,2,3,4,5,6,7},idle_values);
         daq->DO.disable_values.set({0,1,2,3,4,5,6,7},idle_values);
-        daq->DO.expire_values.write({0,1,2,3,4,5,6,7},idle_values);   
+        daq->DO.expire_values.write({0,1,2,3,4,5,6,7},idle_values);
 
         moe = std::make_shared<MahiOpenExoHardware>(config_hw);
-   
     }
 
-    // calibrate - manually zero the encoders (right arm supinated)
+    // calibrate
     if (result.count("calibrate") > 0) {
         moe->calibrate_auto(stop);
-        LOG(Info) << "MAHI Exo-II encoders calibrated.";
+        LOG(Info) << "Mahi Open Exo encoders calibrated";
         return 0;
     }
 
@@ -83,14 +85,24 @@ int main(int argc, char* argv[]) {
     MelShare ms_trq("ms_trq");
     MelShare ms_ref("ms_ref");
 
+    std::vector<Time> state_times = {seconds(2.0),seconds(10.0)};
+    // set up for chirp 
+    ////////////////////////////////EFE,FPS,WFE,WRU
+    std::vector<double> min_freq   = {0.1,0.1,0.1,0.1};
+    std::vector<double> max_freq   = {.75,1.5,1.5,1.5};
+    std::vector<double> amplitudes = {20.0,20.0,20.0,10.0};
+    std::vector<double> c_const(4,0.0);
+    for (std::size_t i = 0; i < 4; i++) {
+        c_const[i] = (max_freq[i]-min_freq[i])/state_times[gather_data].as_seconds();
+    }
+
+
     std::vector<std::vector<double>> setpoint_rad_ranges = {{-90 * DEG2RAD, 20 * DEG2RAD},
                                                             {-90 * DEG2RAD, 90 * DEG2RAD},
                                                             {-80 * DEG2RAD, 80 * DEG2RAD},
                                                             {-60 * DEG2RAD, 60 * DEG2RAD}};
 
-                                     // state 0    // state 1    // state 2    // state 3    // state 4    // state 5    // state 6
-    
-    std::vector<Time> state_times = {seconds(2.0),seconds(30.0)};
+
     double t = 0;
 
     Time mj_Ts = milliseconds(50);
@@ -105,16 +117,17 @@ int main(int argc, char* argv[]) {
     Clock keypress_refract_clock;
     Time keypress_refract_time = seconds(0.5);
 
-    std::vector<std::string> dof_str = {"ElbowFE", "WristPS", "WristFE", "WristRU"};
+    std::vector<std::string> dof_str = {"WRU", "WFE", "FPS", "EFE"};
 
     state current_state = to_neutral;
+
     WayPoint current_position;
     WayPoint new_position;
     Time traj_length;
-    WayPoint dummy_waypoint = WayPoint(Time::Zero, {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD});
+    WayPoint dummy_waypoint = WayPoint(Time::Zero, {0,0,0,0});
     MinimumJerk mj(mj_Ts, dummy_waypoint, neutral_point.set_time(state_times[to_neutral]));
-    std::vector<double> traj_max_diff = { 60 * DEG2RAD, 60 * DEG2RAD, 100 * DEG2RAD, 60 * DEG2RAD};
-	mj.set_trajectory_params(Trajectory::Interp::Linear, traj_max_diff);
+    std::vector<double> traj_max_diff = {60 * DEG2RAD, 60 * DEG2RAD, 100 * DEG2RAD, 60 * DEG2RAD};
+    mj.set_trajectory_params(Trajectory::Interp::Linear, traj_max_diff);
     Clock ref_traj_clock;
 
     std::vector<double> aj_positions(4,0.0);
@@ -123,33 +136,27 @@ int main(int argc, char* argv[]) {
     std::vector<double> command_torques(4,0.0);
 
     ref_traj_clock.restart();
-	
-	// enable DAQ and exo
-	moe->daq_enable();
-	
-    moe->enable();
-	
-	// moe->daq_watchdog_start();    
 
-    // trajectory following
+    // enable DAQ and exo
+    moe->daq_enable();
+
+    moe->enable();
+
     LOG(Info) << "Starting Movement.";
 
-    std::vector<std::vector<double>> data;
+    std::vector<std::vector<std::vector<double>>> data3D;
+    std::vector<std::vector<double>> data2D;
     std::vector<double> data_line;
 
-    //initialize kinematics
     moe->daq_read_all();
     moe->update();
 
     WayPoint start_pos(Time::Zero, moe->get_joint_positions());
 
     mj.set_endpoints(start_pos, neutral_point.set_time(state_times[to_neutral]));
-    UserParams badParams = {3,   // forearm position from the distal end of the robot
-                                   4,   // cw position
-                                   0}; // angle in degrees
-    moe->set_subject_parameters(badParams);
-    //moe->update_J0();
 
+    moe->moe_dynamic_model.set_user_params(UserParams{3,4,0});
+    int active_joint = 3;
     while (!stop) {
         moe->daq_read_all();
 
@@ -159,105 +166,95 @@ int main(int argc, char* argv[]) {
             ref = mj.trajectory().at_time(ref_traj_clock.get_elapsed_time());
         }
         else {
-            ref = {-35 * DEG2RAD,  00 * DEG2RAD, 00  * DEG2RAD, 00 * DEG2RAD};
+            for(std::size_t i = 0; i < moe->n_j; ++i) {
+                if (i == active_joint) {
+                    ref[i] = neutral_point[i] + amplitudes[i]*DEG2RAD*sin(2*PI*(c_const[active_joint]/2.0*ref_traj_clock.get_elapsed_time().as_seconds()*ref_traj_clock.get_elapsed_time().as_seconds() + min_freq[active_joint]*ref_traj_clock.get_elapsed_time().as_seconds()));
+                }
+                else {
+                    ref[i] = neutral_point[i];
+                }
+            }
         }
-        
 
         for (std::size_t i = 0; i < moe->n_j; ++i) {
             ref[i] = clamp(ref[i], setpoint_rad_ranges[i][0], setpoint_rad_ranges[i][1]);
         }
-        
-        // calculate anatomical command torques
+
         if (result.count("no_torque") > 0){
-            command_torques = {0.0, 0.0, 0.0, 0.0, 0.0};
+            command_torques = {0.0, 0.0, 0.0, 0.0};
             moe->set_raw_joint_torques(command_torques);
         }
         else{
-            if (current_state == to_neutral){
             command_torques = moe->set_pos_ctrl_torques(ref);
-            }
-            else {
-                command_torques = moe->calc_grav_torques();
-                moe->set_raw_joint_torques(command_torques);
-                
-            }
         }
 
-        if (ref_traj_clock.get_elapsed_time() > state_times[current_state]){
+        if (current_state == gather_data) {
+            data_line.clear();
+            data_line.push_back(ref_traj_clock.get_elapsed_time().as_seconds());
+            for (const auto &i : ref) data_line.push_back(i);
+            for (const auto &i : moe->get_joint_positions()) data_line.push_back(i);
+            for (const auto &i : moe->get_joint_velocities()) data_line.push_back(i);
+            for (const auto &i : command_torques) data_line.push_back(i);
+            data2D.push_back(data_line);
+        }
+
+        if (ref_traj_clock.get_elapsed_time() > state_times[current_state]) {
             switch (current_state) {
                 case to_neutral:
-                    current_state = stationary;
+                    current_state = gather_data;
                     ref_traj_clock.restart();
                     break;
-                case stationary:
-                    stop = true;
+                case gather_data:
+                    current_state = to_neutral;
+                    start_pos.set_pos(moe->get_joint_positions());
+                    mj.set_endpoints(start_pos,neutral_point.set_time(state_times[to_neutral]));
+                    ref_traj_clock.restart();
+                    data3D.push_back(data2D);
+                    data2D.clear();
+                    if (active_joint != 0) {
+                        active_joint--;
+                    }
+                    else {
+                        stop = true;
+                    }
                     break;
             }
         }
 
-        std::vector<double> act_torque;
-        if (!result.count("virtual")) {
-            daq->AI.read();
-            act_torque = {daq->AI[0],daq->AI[1],daq->AI[2],daq->AI[3]};
-
-        }
-        else{
-            act_torque = {0,0,0,0};
-        }
-        std::vector<double> grav_torques =  moe->calc_grav_torques();
-        data_line.clear();
-        data_line.push_back(t);
-        for (const auto &i : ref) data_line.push_back(i);
-        for (const auto &i : moe->get_joint_positions()) data_line.push_back(i);
-        for (const auto &i : moe->get_joint_velocities()) data_line.push_back(i);
-        for (const auto &i : moe->get_joint_command_torques()) data_line.push_back(i);
-        for (const auto &trq : act_torque) data_line.push_back(trq);
-        for (const auto &trq : grav_torques) data_line.push_back(trq);
-        data.push_back(data_line);
         
 
-        // kick watchdog
-        // if (!moe->daq_watchdog_kick() || moe->any_limit_exceeded()) {
-        //     stop = true;
-        // }
         if (moe->any_limit_exceeded()) {
             stop = true;
         }
 
-        // update all DAQ output channels
         if (!stop) moe->daq_write_all();
 
         ms_ref.write_data(moe->get_joint_positions());
         ms_pos.write_data(moe->get_joint_velocities());
 
-        // wait for remainder of sample period
         t = timer.wait().as_seconds();
     }
 
-
-    command_torques = {0.0, 0.0, 0.0, 0.0, 0.0};
+    command_torques = {0.0, 0.0, 0.0, 0.0};
     moe->set_raw_joint_torques(command_torques);
     moe->daq_write_all();
 
-
-    std::vector<std::string> header = {"Time (s)", 
-                                       "EFE ref (rad)", "FPS ref (rad)", "WFE ref (rad)", "WRU ref (rad)",
-                                       "EFE act (rad)", "FPS act (rad)", "WFE act (rad)", "WRU act (rad)",
-                                       "EFE act (rad/s)", "FPS act (rad/s)", "WFE act (rad/s)", "WRU act (rad/s)",
-                                       "EFE trq (Nm)", "FPS trq (Nm)", "WFE trq (Nm)", "WRU trq (Nm)",
-                                       "EFE act trq (Nm)","FPS act trq (Nm)", "WFE act trq (Nm)", "WRU act trq (Nm)",
-                                       "EFE Grav","FPS Grav","WFE Grav","WRU Grav"};
-
-    csv_write_row("data/rom_demo_results.csv",header);
-    csv_append_rows("data/rom_demo_results.csv",data);
-    
     moe->daq_disable();
     moe->disable();
 
-    disable_realtime();
+    std::vector<std::string> header = {"Time (s)",
+                                    "EFERef_rad_","FPSRef_rad_","WFERef_rad_","WRURef_rad_",
+                                    "EFEAct_rad_","FPSAct_rad_","WFEAct_rad_","WRUAct_rad_",
+                                    "EFEAct_rad_s_","FPSAct_rad_s_","WFEAct_rad_s_","WRUAct_rad_s_",
+                                    "EFETrq_Nm_","FPSTrq_Nm_","WFETrq_Nm_","WRUTrq_Nm_"};
 
-    // clear console buffer
-    while (get_key_nb() != 0);
+    for (std::size_t i = 0; i < moe->n_j; ++i) {
+        std::string filename = "data/" + dof_str[i] + "/data.csv";
+        csv_write_row(filename,header);
+        csv_append_rows(filename,data3D[i]);
+    }
+    // csv_write_row("data/WRU/data.csv",header);
+    // csv_append_rows("data/WRU/data.csv",data3D[0]);
 
-    return 0;
+
 }

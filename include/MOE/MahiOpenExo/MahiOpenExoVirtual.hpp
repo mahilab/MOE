@@ -1,12 +1,12 @@
 #pragma once
 
 #include <MOE/MahiOpenExo/MoeConfigurationVirtual.hpp>
-#include <MOE/MahiOpenExo/Moe.hpp>
+#include <MOE/MahiOpenExo/MahiOpenExo.hpp>
 #include <Mahi/Util/Print.hpp>
 
 namespace moe {
     /// Class for controlling the Mahi Open Exo
-    class MahiOpenExoVirtual : public Moe {
+    class MahiOpenExoVirtual : public MahiOpenExo {
 
     ///////////////////////// STANDARD CLASS FUNCTIONS AND PARAMS /////////////////////////
 

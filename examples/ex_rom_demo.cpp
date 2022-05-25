@@ -45,6 +45,7 @@ void to_state(state& current_state_, const state next_state_, WayPoint current_p
 }
 
 int main(int argc, char* argv[]) {
+    // std::cout << "start";
     // register ctrl-c handler
     register_ctrl_handler(handler);
 
@@ -75,7 +76,7 @@ int main(int argc, char* argv[]) {
 
     // making DAQ, using command line arguments, connect to DAQ & MOE, turn on/off motors
 
-    std::shared_ptr<Moe> moe = nullptr;
+    std::shared_ptr<MahiOpenExo> moe = nullptr;
     std::shared_ptr<Q8Usb> daq = nullptr;
     
     if(result.count("virtual") > 0){
@@ -257,7 +258,7 @@ int main(int argc, char* argv[]) {
         for (const auto &i : ref) data_line.push_back(i);
         for (const auto &i : moe->get_joint_positions()) data_line.push_back(i);
         for (const auto &i : moe->get_joint_velocities()) data_line.push_back(i);
-        for (const auto &i : moe->get_joint_command_torques(0)) data_line.push_back(i);
+        for (const auto &i : moe->get_joint_command_torques()) data_line.push_back(i);
         for (const auto &trq : act_torque) data_line.push_back(trq);
         for (const auto &trq : grav_torques) data_line.push_back(trq);
         data.push_back(data_line);
