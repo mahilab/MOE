@@ -36,6 +36,11 @@ FetchContent_MakeAvailable(mahi-robo)
 FetchContent_Declare(mahi-com GIT_REPOSITORY https://github.com/mahilab/mahi-com.git)
 FetchContent_MakeAvailable(mahi-com)
 
+# MAHI GUI
+FetchContent_Declare(mahi-gui GIT_REPOSITORY https://github.com/mahilab/mahi-gui.git
+    GIT_TAG origin/plotter)
+FetchContent_MakeAvailable(mahi-gui)
+
 # this normally gets set in the mahi-mpc cmakelists, but if you want to test the moe-mpc examples
 # here, you need to set this on. Just make sure to not push it to github or else everyone that
 # uses moe will have to build casadi

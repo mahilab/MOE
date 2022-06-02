@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
     mj.set_endpoints(start_pos, neutral_point.set_time(state_times[to_neutral]));
     UserParams badParams = {3,   // forearm position from the distal end of the robot
                                    4,   // cw position
-                                   0}; // angle in degrees
+                                   0}; // angle
     moe->set_user_parameters(badParams);
     //moe->update_J0();
 
