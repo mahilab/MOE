@@ -56,10 +56,10 @@ int main(int argc, char* argv[]) {
     // Create filter
     std::vector<Butterworth> acc_filter;
     std::cout << "HERE" << std::endl;
-    acc_filter.emplace_back(2,0.05,Butterworth::Lowpass);
-    acc_filter.emplace_back(2,0.05,Butterworth::Lowpass);
-    acc_filter.emplace_back(2,0.05,Butterworth::Lowpass);
-    acc_filter.emplace_back(2,0.05,Butterworth::Lowpass);
+    acc_filter.emplace_back(2,hertz(15),hertz(1000),Butterworth::Lowpass);
+    acc_filter.emplace_back(2,hertz(15),hertz(1000),Butterworth::Lowpass);
+    acc_filter.emplace_back(2,hertz(15),hertz(1000),Butterworth::Lowpass);
+    acc_filter.emplace_back(2,hertz(15),hertz(1000),Butterworth::Lowpass);
     std::vector<double> last_vel(4,0.0);
     double last_time = 0;
     std::vector<double> acc(4,0.0);
