@@ -3,14 +3,14 @@
 #include <Mahi/Util.hpp>
 #include <Mahi/Daq.hpp>
 #include <Mahi/Robo.hpp>
-// #include <Mahi/Gui.hpp>
-#include <Mahi/Casadi/ModelControl.hpp>
+#include <Mahi/Mpc.hpp>
 #include <vector>
 
 using namespace mahi::util;
 using namespace mahi::daq;
 using namespace mahi::robo;
 using namespace mahi::com;
+using namespace mahi::mpc;
 using namespace moe;
 
 using mahi::robo::WayPoint;
@@ -168,10 +168,14 @@ int main(int argc, char* argv[]) {
     }
     else{
         //      0     1     2     3   
-        Q = {  25,   35,   45,   60,  // pos
-             0.10, 0.03, 0.02, 0.01}; // vel
-        R = {   2,   10,   30,   30}; // del_U
-        Rm ={   0,   0,   0,   0}; // magnitude
+        // Q = {  25,   35,   45,   60,  // pos
+        //      0.20, 0.06, 0.04, 0.02}; // vel
+        // R = {   2,   10,   30,   30}; // del_U
+        // Rm ={   0,    0,    0,    0}; // magnitude
+        Q = {  10,   10,   10,   10,  // pos
+             0.10, 0.10, 0.10, 0.10}; // vel
+        R = {   1,   20,   40,   40}; // del_U
+        Rm ={   0,    0,    0,    0}; // magnitude
     }
 
     if (result.count("q_vec")) Q = result["q_vec"].as<std::vector<double>>();

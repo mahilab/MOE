@@ -3,13 +3,14 @@
 #include <Mahi/Util.hpp>
 #include <Mahi/Daq.hpp>
 #include <Mahi/Robo.hpp>
-#include <Mahi/Casadi/ModelControl.hpp>
+#include <Mahi/Mpc.hpp>
 #include <vector>
 
 using namespace mahi::util;
 using namespace mahi::daq;
 using namespace mahi::robo;
 using namespace mahi::com;
+using namespace mahi::mpc;
 using namespace moe;
 
 using mahi::robo::WayPoint;
