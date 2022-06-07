@@ -1,8 +1,9 @@
 #include <MOE/MOE.hpp>
-#include <Mahi/Casadi/ModelGenerator.hpp>
+#include <Mahi/Mpc.hpp>
 #include <Mahi/Util.hpp>
 
 using namespace casadi;
+using namespace mahi::mpc;
 using mahi::util::PI;
 
 int main(int argc, char* argv[])
@@ -72,8 +73,8 @@ int main(int argc, char* argv[])
 
     // settings for multiple shooting constructions
     mahi::util::Time time_step  = mahi::util::milliseconds(linear ? 2 : 2);
-    int num_shooting_nodes = 25;
-
+    int num_shooting_nodes = linear ? 25 : 25;
+    // 4, 15 kind of worked
     ModelParameters model_parameters(model_name, // name
                                      x.size1(),                // num_x
                                      u.size1(),                // num_u

@@ -1,8 +1,9 @@
 #include <MOE/MOE.hpp>
-#include <Mahi/Casadi/ModelGenerator.hpp>
+#include <Mahi/Mpc.hpp>
 #include <Mahi/Util.hpp>
 
 using namespace casadi;
+using namespace mahi::mpc;
 using mahi::util::PI;
 
 SX format_A(SX A_full,std::vector<int> dof){

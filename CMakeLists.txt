@@ -39,7 +39,7 @@ FetchContent_MakeAvailable(mahi-com)
 # this normally gets set in the mahi-mpc cmakelists, but if you want to test the moe-mpc examples
 # here, you need to set this on. Just make sure to not push it to github or else everyone that
 # uses moe will have to build casadi
-option(WITH_MAHI_MPC "Turn ON to build mahi-mpc" OFF)
+# option(WITH_MAHI_MPC "Turn ON to build mahi-mpc" ON)
 if (WITH_MAHI_MPC)
     FetchContent_Declare(mahi-mpc GIT_REPOSITORY https://github.com/mahilab/mahi-mpc.git
                                 GIT_TAG origin/main)
@@ -81,16 +81,3 @@ if(MOE_EXAMPLES)
     add_subdirectory(examples)
     add_subdirectory(setup)
 endif()
-
-# function(link_mpc mpc_target_name)
-# add_custom_command(
-#     TARGET ${mpc_target_name} POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#             ${CMAKE_SOURCE_DIR}/build/_deps/casadi-build/$<CONFIG>/casadi.dll
-#             $<TARGET_FILE_DIR:${mpc_target_name}>)     
-# add_custom_command(
-#     TARGET ${mpc_target_name} POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#             ${CMAKE_SOURCE_DIR}/build/_deps/casadi-build/$<CONFIG>/casadi_nlpsol_ipopt.dll
-#             $<TARGET_FILE_DIR:${mpc_target_name}>)     
-# endfunction()
