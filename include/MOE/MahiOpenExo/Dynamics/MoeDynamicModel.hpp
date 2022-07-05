@@ -78,7 +78,7 @@ namespace moe {
         // General function that combines a vector of joint properties that move together
         JointProperties combine_bodies(std::vector<JointProperties> bodies);
         // Function that reads in jsons for the arm properties and adds them to moe_mass_props
-        void add_arm_props(std::string folder_path);
+        void add_arm_props(std::string folder_path, bool friction_exists = false);
 #ifdef MAHI_MPC
         public:
         // Function to get M

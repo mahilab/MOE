@@ -145,13 +145,17 @@ namespace moe {
     // This function will read in the jsons named in the format shown and update the moe_mass_props struct
     // Format: folder_path/J0_arm_mass_props.json
     //         folder_path/J1_arm_mass_props.json
-    void MoeDynamicModel::add_arm_props(std::string folder_path) {
+    //         folder_path/J2_arm_mass_props.json
+    //         folder_path/J3_arm_mass_props.json
+    //         folder_path/armFriction.json (optional)
+    void MoeDynamicModel::add_arm_props(std::string folder_path, bool friction_exists) {
         if (is_arm_initialized == false) {
             // File path for each json
             std::string efe_file_path = folder_path + "/J0_arm_mass_properties.json";
             std::string fps_file_path = folder_path + "/J1_arm_mass_properties.json";
             std::string wfe_file_path = folder_path + "/J2_arm_mass_properties.json";
             std::string wru_file_path = folder_path + "/J3_arm_mass_properties.json";
+            std::string friction_file_path = folder_path + "/armFriction.json";
             // Make a vector of all the arm properties
             std::vector<JointProperties> arm_props = {JointProperties::get_from_json(efe_file_path),
                                                       JointProperties::get_from_json(fps_file_path),
@@ -162,6 +166,20 @@ namespace moe {
             moe_mass_props.J1 = combine_bodies({moe_mass_props.J1,arm_props[1]});
             moe_mass_props.J2 = combine_bodies({moe_mass_props.J2,arm_props[2]});
             moe_mass_props.J3 = combine_bodies({moe_mass_props.J3,arm_props[3]});
+
+            // get the arm friction properties and add them to the current properties
+            if (friction_exists) {
+                json friction_json;
+                std::ifstream friction_file(friction_file_path);
+                friction_file >> friction_json;
+                auto Fk_arm = friction_json["Fk"].get<std::vector<double>>();
+                auto B_arm = friction_json["B"].get<std::vector<double>>();
+                for (int i = 0; i < 4; i++) {
+                    Fk_coeff[i] += Fk_arm[i];
+                    B_coeff[i] += B_arm[i];
+                }
+            }
+
             is_arm_initialized = true;
         } 
         // Unable to add arm properties more than once
