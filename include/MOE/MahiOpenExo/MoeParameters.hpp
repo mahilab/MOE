@@ -24,9 +24,9 @@ namespace moe {
         motor_cont_limits_ {                  5,                  5,                  5,                  5}, // Nm
         motor_peak_limits_ {                  0,                  0,                  0,                  0}, // Nm
         motor_i2t_times_   {       seconds(0.0),       seconds(0.0),       seconds(0.0),       seconds(0.0)}, // s
-        eta_               {           0.407/4.5,        0.4706/8.75,         0.4735/9.0,        0.2210/6.00}, // Nm/Nm
+        eta_               {           0.407/4.5,        0.4706/8.75,         0.4735/9.0,       0.2210/6.00}, // Nm/Nm
         encoder_res_       {                500,                500,                500,                500}, // counts/rev
-        pos_limits_min_    { -73.6285 * DEG2RAD, -89.8249 * DEG2RAD, -63.2490 * DEG2RAD, -42.9322 * DEG2RAD}, // radians
+        pos_limits_min_    { -73.6285 * DEG2RAD, -89.8249 * DEG2RAD, -63.2490 * DEG2RAD, -36.6924 * DEG2RAD}, // radians
         pos_limits_max_    { +28.6283 * DEG2RAD, +89.8249 * DEG2RAD, +68.2490 * DEG2RAD, +30.9087 * DEG2RAD}, // radians
         vel_limits_        {      180 * DEG2RAD,      200 * DEG2RAD,      200 * DEG2RAD,      200 * DEG2RAD}, // radians/s
         joint_torque_limits{                8.0,                4.0,                4.0,                3.0}  // Nm

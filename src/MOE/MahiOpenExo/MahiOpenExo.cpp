@@ -440,10 +440,13 @@ namespace moe {
             // write all DAQs
             daq_write_all();
 
+            int vel_check_joint = 0;
             for (const auto &vel_safety_check : get_joint_velocities()) {
                 if (abs(vel_safety_check) > vel_ref*4.0){
+                    LOG(mahi::util::Error) << "vel safety check failed on joint " << vel_check_joint << " with a value of " << vel_safety_check;
                     stop = true;
                 }
+                vel_check_joint++;
             }
             
             if (any_velocity_limit_exceeded() || any_torque_limit_exceeded()) {
