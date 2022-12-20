@@ -17,7 +17,7 @@ using mahi::robo::WayPoint;
 
 enum state {
     to_neutral_0,     // 0
-    wrist_circle,     // 1
+    mpc_state,     // 1
 };
 
 // create global stop variable CTRL-C handler function
@@ -27,7 +27,9 @@ bool handler(CtrlEvent event) {
     return true;
 }
 
+// helper function to advance from one state to another and reset relevant variables
 void to_state(state& current_state_, const state next_state_, WayPoint current_position_, WayPoint new_position_, Time traj_length_, MinimumJerk& mj_, Clock& ref_traj_clock_) {
+    // create new beginning and endpoints for a trajectory (mj_)
     current_position_.set_time(seconds(0));
     new_position_.set_time(traj_length_);
     mj_.set_endpoints(current_position_, new_position_);
@@ -53,15 +55,15 @@ std::vector<double> get_state(std::shared_ptr<MahiOpenExo> moe_ptr){
     return state;
 }
 
+// gets the trajectory in the desired format for MPC (all positions, then all velocities at Ts 1, then all positions, then all velocities at Ts 2, etc.)
 std::vector<double> get_traj(double curr_time, int n_dof, int ns, double step_size, std::vector<double> amps, std::vector<double> freqs, std::vector<double> offsets){
     std::vector<double> traj;
     for (auto i = 0; i < ns; i++){
         for (auto j = 0; j < n_dof * 2; j++){
             // if it is one of the position states
             if (j < n_dof) traj.push_back( 1 * amps[j%n_dof] * DEG2RAD * cos(2.0*PI*freqs[j%n_dof]*curr_time) + offsets[j%n_dof] - amps[j%n_dof]*DEG2RAD);
-            // if it is one of the velocity states
+            // if it is one of the velocity states, add derivative of the position
             else           traj.push_back( -1 * amps[j%n_dof] * DEG2RAD * 2.0 * PI * freqs[j%n_dof]*sin(2.0*PI*freqs[j%n_dof]*curr_time));
-            // std::cout << traj.back();
         }
         curr_time += step_size;
     }
@@ -131,15 +133,11 @@ int main(int argc, char* argv[]) {
 
     //////////////////////////////////////////////
 
-    // calibrate - manually zero the encoders (right arm supinated)
     if (result.count("calibrate") > 0) {
         moe->calibrate_auto(stop);
         LOG(Info) << "MAHI Exo-II encoders calibrated.";
         return 0;
     }
-
-    // mahi::gui::PlotHelper plot_helper;
-    // mahi::gui::run_plotter(plot_helper);
 
     // make MelShares
     MelShare ms_pos("ms_pos");
@@ -153,10 +151,8 @@ int main(int argc, char* argv[]) {
                                                             {-60 * DEG2RAD, 60 * DEG2RAD},
                                                             {-60 * DEG2RAD, 60 * DEG2RAD}};
 
-                                     // state 0    // state 1    // state 2    // state 3    // state 4    // state 5    // state 6
+                                     // state 0    // state 1
     std::vector<Time> state_times = {seconds(2.0), seconds(15.0)};
-
-    casadi::Dict solver_opts;
     
     std::vector<double> Q, R, Rm;
     if (result.count("linear")){
@@ -167,35 +163,32 @@ int main(int argc, char* argv[]) {
         Rm ={   0,    0,    0,    0}; // magnitude
     }
     else{
-        //      0     1     2     3   
-        // Q = {  25,   35,   45,   60,  // pos
-        //      0.20, 0.06, 0.04, 0.02}; // vel
-        // R = {   2,   10,   30,   30}; // del_U
-        // Rm ={   0,    0,    0,    0}; // magnitude
         Q = {  10,   10,   10,   10,  // pos
              0.10, 0.10, 0.10, 0.10}; // vel
         R = {   1,   20,   40,   40}; // del_U
         Rm ={   0,    0,    0,    0}; // magnitude
     }
 
+    // user can override gains using command line arguments if desired
     if (result.count("q_vec")) Q = result["q_vec"].as<std::vector<double>>();
     if (result.count("r_vec")) R = result["r_vec"].as<std::vector<double>>();
 
+    // loading the correct model
     ModelControl model_control(result.count("linear") ? "linear_moe" : "moe", Q, R, Rm);
 
-    // register ctrl-c handler
+    // register ctrl-c handler (THIS HAS TO BE DONE AFTER MODEL CONTROL INITIATED)
     register_ctrl_handler(handler);
 
     // setup trajectories
-
     double t = 0;
 
     Time mj_Ts = milliseconds(50);
 
     std::vector<double> ref;
 
-    double freq_factor = 0.5;
+    double freq_factor = 0.5; // modifier for frequency of sinusoidal trajectories
 
+    // values used in the get_traj function
 	std::vector<double> sin_amplitudes = {30.0, 30.0, 30.0, 30.0};
 	std::vector<double> sin_frequencies = {0.26*freq_factor, 0.36*freq_factor, 0.57*freq_factor, 0.82*freq_factor};
 
@@ -208,10 +201,6 @@ int main(int argc, char* argv[]) {
     // construct timer in hybrid mode to avoid using 100% CPU
     Timer timer(Ts, Timer::Hybrid);
     timer.set_acceptable_miss_rate(0.05);
-
-    // construct clock for regulating keypress
-    Clock keypress_refract_clock;
-    Time keypress_refract_time = seconds(0.5);
 
     std::vector<std::string> dof_str = {"ElbowFE", "WristPS", "WristFE", "WristRU"};
 
@@ -242,11 +231,11 @@ int main(int argc, char* argv[]) {
     moe->enable();
 	
 
-
+    // get traj at time 0 to feed the MPC model to start
     std::vector<double> traj = get_traj(0, moe->n_j, model_control.model_parameters.num_shooting_nodes, 
                                         model_control.model_parameters.step_size.as_seconds(), sin_amplitudes, sin_frequencies, neutral_point.get_pos());
-    // std::cout << traj << std::endl;
 
+    // data logging prep
     std::vector<std::vector<double>> data;
     std::vector<double> data_line;
 
@@ -257,12 +246,14 @@ int main(int argc, char* argv[]) {
     moe->daq_read_all();
     moe->update();
 
-    auto initial_mpc_state = neutral_point.get_pos();
-    for (auto i = 0; i < moe->n_j; i++) initial_mpc_state.push_back(0);
-    std::vector<double> initial_mpc_control = {0,0,0,0};
+    auto initial_mpc_state = neutral_point.get_pos(); // initial pos
+    for (auto i = 0; i < moe->n_j; i++) initial_mpc_state.push_back(0); // initial vel
+    std::vector<double> initial_mpc_control = {0,0,0,0}; // initial control
     
+    // set state and start the other thread which just runs MPC nonstop
     model_control.set_state(mahi::util::seconds(0), initial_mpc_state, initial_mpc_control, traj);
     model_control.start_calc();
+    sleep(300_ms); // let the model do its thing for a bit (not really necessary)
 
     WayPoint start_pos(Time::Zero, moe->get_joint_positions());
 
@@ -275,20 +266,23 @@ int main(int argc, char* argv[]) {
         // update MahiOpenExo kinematics
         moe->update();
 
-        if (current_state != wrist_circle) {
+        // if we haven't started MPC yet (just moving to starting point)
+        if (current_state != mpc_state) {
             // update reference from trajectory
             ref = mj.trajectory().at_time(ref_traj_clock.get_elapsed_time());
 
+            // get traj still at time 0 because that is starting time of MPC trajectory
             traj = get_traj(0.0, moe->n_j, model_control.model_parameters.num_shooting_nodes, 
                             model_control.model_parameters.step_size.as_seconds(), sin_amplitudes, sin_frequencies, neutral_point.get_pos());
+            // set the current state and control values 
             model_control.set_state(mahi::util::seconds(0), get_state(moe), command_torques, traj);
         } 
         else {
+            // get trajectory at current time
             traj = get_traj(ref_traj_clock.get_elapsed_time().as_seconds(), moe->n_j, model_control.model_parameters.num_shooting_nodes, 
                             model_control.model_parameters.step_size.as_seconds(), sin_amplitudes, sin_frequencies, neutral_point.get_pos());
-            static bool first_time = true;
-            // if (first_time) std::cout << traj << std::endl;
-            first_time = false;
+
+            // set the current state and control values 
             model_control.set_state(ref_traj_clock.get_elapsed_time(), get_state(moe), command_torques, traj);
         }
 
@@ -297,37 +291,39 @@ int main(int argc, char* argv[]) {
             ref[i] = clamp(ref[i], setpoint_rad_ranges[i][0], setpoint_rad_ranges[i][1]);
         }
         
-        // calculate anatomical command torques
+        // apply command torques
         if (result.count("no_torque") > 0){
             command_torques = {0.0, 0.0, 0.0, 0.0};
             moe->set_raw_joint_torques(command_torques);
         }
         else{
-            if (current_state != wrist_circle){
+            // if not at MPC yet, just use position control like normal
+            if (current_state != mpc_state){
                 command_torques = moe->set_pos_ctrl_torques(ref);
             } 
             else{
+                // apply MPC torques unless pd_control cmd line argument is used
                 if (!result.count("pd_control")){
                     command_torques = model_control.control_at_time(ref_traj_clock.get_elapsed_time()).u;
                 } 
+                // if pd_control is used, just use PD control
                 else{
                     for (auto i = 0; i < 4; i++) ref[i] = traj[i];
                     command_torques = moe->set_pos_ctrl_torques(ref);
                 }
             }
-            // command_torques[3] *= 0;
-            // command_torques[3] *= 0;
         }
-        if (current_state == wrist_circle) moe->set_raw_joint_torques(command_torques);
+        // because we had to generate command torques in a different way not provided by the moe class, command raw torques
+        if (current_state == mpc_state) moe->set_raw_joint_torques(command_torques);
 
         // if enough time has passed, continue to the next state. See to_state function at top of file for details
         if (ref_traj_clock.get_elapsed_time() > state_times[current_state]) {
 
             switch (current_state) {
                 case to_neutral_0:
-                    to_state(current_state, wrist_circle, neutral_point, neutral_point, state_times[wrist_circle], mj, ref_traj_clock);
+                    to_state(current_state, mpc_state, neutral_point, neutral_point, state_times[mpc_state], mj, ref_traj_clock);
                     break;
-                case wrist_circle:
+                case mpc_state:
                     stop = true;
                     break;
             }
@@ -341,10 +337,10 @@ int main(int argc, char* argv[]) {
         // joint velocities
         for (const auto &i : moe->get_joint_velocities()) data_line.push_back(i);
         // position ref
-        if (current_state != wrist_circle) for (auto &&i : ref) data_line.push_back(i);
+        if (current_state != mpc_state) for (auto &&i : ref) data_line.push_back(i);
         else for (auto i = 0; i < 4; i++) data_line.push_back(traj[i]);
         // velocity ref
-        if (current_state != wrist_circle) for (auto &&i : ref) data_line.push_back(0);
+        if (current_state != mpc_state) for (auto &&i : ref) data_line.push_back(0);
         else for (auto i = 4; i < 8; i++) data_line.push_back(traj[i]);
         // command torques
         for (auto &&i : command_torques) data_line.push_back(i);
@@ -357,30 +353,24 @@ int main(int argc, char* argv[]) {
         // update all DAQ output channels
         if (!stop) moe->daq_write_all();
 
-        // plot_helper.add_data("EFE Ref", traj[0]);
-        // plot_helper.add_data("EFE Pos", moe->get_joint_position(0));
-        // plot_helper.add_data("EFE Torque", moe->get_joint_command_torque(0));
-        // plot_helper.write_data();
-
-        // ms_ref.write_data(moe->get_joint_positions());
-        // ms_pos.write_data(moe->get_joint_velocities());
-
-        // std::cout << ref_traj_clock.get_elapsed_time().as_seconds() << std::endl << ref << std::endl << std::endl;
-
         // wait for remainder of sample period
         t = timer.wait().as_seconds();
     }
-    command_torques = {0.0, 0.0, 0.0, 0.0, 0.0};
+    // command 0 torque 
+    command_torques = {0.0, 0.0, 0.0, 0.0};
     moe->set_raw_joint_torques(command_torques);
     moe->daq_write_all();
 
+    // stop the MPC thread
     model_control.stop_calc();
     
+    // stop the DAQ and disable moe
     moe->daq_disable();
     moe->disable();
 
     disable_realtime();
 
+    // write data to csv
     std::vector<std::string> header = {"Time (s)", 
                                          "EFE act (rad)",   "FPS act (rad)",   "WFE act (rad)",   "WRU act (rad)",
                                        "EFE act (rad/s)", "FPS act (rad/s)", "WFE act (rad/s)", "WRU act (rad/s)",

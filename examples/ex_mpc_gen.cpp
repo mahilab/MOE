@@ -8,7 +8,7 @@ using mahi::util::PI;
 
 int main(int argc, char* argv[])
 {
-    mahi::util::Options options("options.exe", "Simple Program Demonstrating Options");
+    mahi::util::Options options("ex_mpc_gen.exe", "Using MOE to generate MPC model with all states active");
 
     options.add_options()
         ("l,linear", "Generates linearized model.")
@@ -23,6 +23,7 @@ int main(int argc, char* argv[])
 
     bool linear = result.count("linear") > 0;
 
+    // casadi variables for the parameters needed
     SX x, x_dot, u;
     std::string model_name;
 
@@ -32,12 +33,18 @@ int main(int argc, char* argv[])
     SX T1 = SX::sym("T1");
     SX T2 = SX::sym("T2");
     SX T3 = SX::sym("T3");
+
+    // create moe dynamic model
     moe::MoeDynamicModel moe_model;
     moe_model.set_user_params({3,  // forearm
                                4,  // counterweight position
                                0}); // shoulder rotation
-    moe_model.add_arm_props("C:/Users/nbd2/Box/MAHI_Open_Exo/Model_Optimization/ArmOpt/Nathan6");
+    
+    // can add an arm property file here if desired
+    // moe_model.add_arm_props("C:/Users/nbd2/Box/MAHI_Open_Exo/Model_Optimization/ArmOpt/Nathan6");
+
     // state vector
+    // q0, q1, ... already exist in moe, so this is just pulling them into a single vector
     x = SX::vertcat({moe_model.q0,
                      moe_model.q1,
                      moe_model.q2,
@@ -53,6 +60,7 @@ int main(int argc, char* argv[])
                             moe_model.q2_dot,
                             moe_model.q3_dot});
 
+    // pulling relevant models from moe class
     auto G = moe_model.cas_get_G();
     auto V = moe_model.cas_get_V();
     auto Friction = moe_model.cas_get_Friction();
@@ -61,6 +69,7 @@ int main(int argc, char* argv[])
     SX q_d_dot = solve(A_eom,B_eom);
     x_dot = vertcat(q_dot,q_d_dot);
 
+    // I normally do linear because it is a lot faster and doesn't really affect performance. I would use that by default
     if (linear) model_name = "linear_" + model_name;
     
     // Bounds on state
@@ -72,9 +81,9 @@ int main(int argc, char* argv[])
     std::vector<double> u_max(u.size1(), inf);
 
     // settings for multiple shooting constructions
-    mahi::util::Time time_step  = mahi::util::milliseconds(linear ? 2 : 2);
-    int num_shooting_nodes = linear ? 25 : 25;
-    // 4, 15 kind of worked
+    mahi::util::Time time_step  = mahi::util::milliseconds(linear ? 2 : 2); // time step for the MPC formulation
+    int num_shooting_nodes = linear ? 25 : 25; // number of time steps into the future we look at
+
     ModelParameters model_parameters(model_name, // name
                                      x.size1(),                // num_x
                                      u.size1(),                // num_u
@@ -82,13 +91,15 @@ int main(int argc, char* argv[])
                                      num_shooting_nodes,       // num_shooting_nodes
                                      linear);                  // is_linear;                  
 
-    // 
+    // This is a helper class to actually generate the model
     ModelGenerator my_generator(model_parameters, x, x_dot, u);
 
+    // these are the required methods to call to generate the model to use in c++
     my_generator.create_model();
     my_generator.generate_c_code();
     my_generator.compile_model();
 
+    // just to check if it finishes
     std::cout << "Finished generating models" << std::endl;
     return 0;
 }

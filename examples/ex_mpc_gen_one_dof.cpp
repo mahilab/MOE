@@ -6,6 +6,7 @@ using namespace casadi;
 using namespace mahi::mpc;
 using mahi::util::PI;
 
+// format A matrix to only include the DOF being tested
 SX format_A(SX A_full,std::vector<int> dof){
     SX A_res = SX::zeros(dof.size(),dof.size());
     for (auto i = 0; i < dof.size(); i++){
@@ -16,6 +17,7 @@ SX format_A(SX A_full,std::vector<int> dof){
     return A_res;
 }
 
+// format B matrix to only include the DOF being tested
 SX format_B(SX B_full,std::vector<int> dof){
     SX B_res = SX::zeros(dof.size(),1);
     for (auto i = 0; i < dof.size(); i++){
@@ -26,11 +28,11 @@ SX format_B(SX B_full,std::vector<int> dof){
 
 int main(int argc, char* argv[])
 {
-    mahi::util::Options options("options.exe", "Simple Program Demonstrating Options");
+    mahi::util::Options options("ex_mpc_gen_one_dof.exe", "Using MOE to generate MPC model with a selected set of states active");
 
     options.add_options()
         ("l,linear", "Generates linearized model.")
-        ("d,dof",    "Which DOF is being tested.", cxxopts::value<std::vector<int>>())
+        ("d,dof",    "Vector of which DOFs are being tested. (-d 0,2)", cxxopts::value<std::vector<int>>())
         ("h,help",   "Prints help message.");
     
     auto result = options.parse(argc, argv);
@@ -41,6 +43,7 @@ int main(int argc, char* argv[])
     }
 
     bool linear = result.count("linear") > 0;
+
     std::vector<int> dof;
     if (result.count("dof")){
         dof = result["dof"].as<std::vector<int>>();
@@ -51,6 +54,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    // casadi variables for the parameters needed
     SX x, x_dot, u;
     std::string model_name;
 
@@ -61,9 +65,16 @@ int main(int argc, char* argv[])
     SX T2 = SX::sym("T2");
     SX T3 = SX::sym("T3");
 
-
+    // create moe dynamic model
     moe::MoeDynamicModel moe_model;
+    moe_model.set_user_params({3,  // forearm
+                               4,  // counterweight position
+                               0}); // shoulder rotation
 
+    // can add an arm property file here if desired
+    // moe_model.add_arm_props("C:/Users/nbd2/Box/MAHI_Open_Exo/Model_Optimization/ArmOpt/Nathan6");
+
+    // we start with the full set of pos and vel and reduce later based on active DOF
     SXVector q_full = {moe_model.q0,
                        moe_model.q1,
                        moe_model.q2,
@@ -85,11 +96,7 @@ int main(int argc, char* argv[])
         qd_vec.push_back(q_full[dof[i]+4]);
         u_vec.push_back(u_full[dof[i]]);
     }
-    
-    
-    moe_model.set_user_params({7,  // forearm
-                               4,  // counterweight position
-                               30}); // shoulder rotation
+
     // state vector
     SXVector x_vec = q_vec;
     x_vec.insert(x_vec.end(), qd_vec.begin(), qd_vec.end());
@@ -98,27 +105,28 @@ int main(int argc, char* argv[])
 
     SX q_dot = SX::vertcat(qd_vec);
 
+    // create a vector of what variables are being set to zero based on active dofs
     auto zero_variables_vec = q_full;
     for (int i = (dof.size()-1); i >= 0; i--) zero_variables_vec.erase(zero_variables_vec.begin()+dof[i]+4);
     for (int i = (dof.size()-1); i >= 0; i--) zero_variables_vec.erase(zero_variables_vec.begin()+dof[i]);
-
     casadi::SX zero_variables = vertcat(zero_variables_vec);
 
+    // pulling relevant models from moe class
     auto G = moe_model.cas_get_G();
     auto V = moe_model.cas_get_V();
     auto Friction = moe_model.cas_get_Friction();
     auto B_full = u_full_SX - V - G - Friction;
-    // std::cout << "here" << std::endl;
     auto A_full = moe_model.cas_get_effective_M();
-    // std::cout << "here" << std::endl;
+
+    // modify A and B to be correct size based on active DOF
     auto A_eom = format_A(A_full,dof);
-    // std::cout << "hereA" << std::endl;
     auto B_eom = format_B(B_full,dof);
-    // std::cout << "hereB" << std::endl;
+
+    // solving eom
     SX q_d_dot_nonzero = solve(A_eom,B_eom);
-    // std::cout << q_d_dot_nonzero << std::endl;
-    std::cout << zero_variables << std::endl;
     SX q_d_dot;
+
+    // substitute constant variables into the EOM
     if (!zero_variables_vec.empty()){
         q_d_dot = substitute(q_d_dot_nonzero, zero_variables, std::vector<double>(8-dof.size()*2,0));
     }
@@ -126,12 +134,9 @@ int main(int argc, char* argv[])
         q_d_dot = q_d_dot_nonzero;
     }
 
+    // finalize state and input into correct format
     u = SX::vertcat(u_vec);
-    
     x_dot = vertcat(q_dot,q_d_dot);
-
-    std::cout << u << std::endl;
-    std::cout << x_dot << std::endl;
 
     std::string dof_string = "";
     for (auto d : dof) dof_string += std::to_string(d);
@@ -157,13 +162,15 @@ int main(int argc, char* argv[])
                                      num_shooting_nodes,       // num_shooting_nodes
                                      linear);                  // is_linear;                  
 
-    // 
+    // This is a helper class to actually generate the model
     ModelGenerator my_generator(model_parameters, x, x_dot, u);
 
+    // these are the required methods to call to generate the model to use in c++
     my_generator.create_model();
     my_generator.generate_c_code();
     my_generator.compile_model();
 
+    // just to check if it finishes
     std::cout << "Finished generating models" << std::endl;
     return 0;
 }
