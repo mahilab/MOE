@@ -17,6 +17,17 @@ namespace moe {
         q3_dot = casadi::SX::sym("q3_dot");
         cas_q = casadi::SX::vertcat({q0,q1,q2,q3});
         cas_qd = casadi::SX::vertcat({q0_dot,q1_dot,q2_dot,q3_dot});
+
+        q0m = casadi::MX::sym("q0m");
+        q1m = casadi::MX::sym("q1m");
+        q2m = casadi::MX::sym("q2m");
+        q3m = casadi::MX::sym("q3m");
+        q0m_dot = casadi::MX::sym("q0m_dot");
+        q1m_dot = casadi::MX::sym("q1m_dot");
+        q2m_dot = casadi::MX::sym("q2m_dot");
+        q3m_dot = casadi::MX::sym("q3m_dot");
+        cas_qmq = casadi::MX::vertcat({q0m,q1m,q2m,q3m});
+        cas_qdm = casadi::MX::vertcat({q0m_dot,q1m_dot,q2m_dot,q3m_dot});
 #endif
     }
     // Destructor
@@ -202,7 +213,28 @@ namespace moe {
 
     casadi::SX MoeDynamicModel::cas_get_effective_M() {
         casadi::SX effective_M = cas_get_M() + cas_get_rotor_inertia();
+       
+       
         return effective_M;
     }
+
+        casadi::MX MoeDynamicModel::cas_get_rotor_inertia_m() {
+        casadi::MX rotor_inertia_vector = casadi::MX::zeros(n_j,1);
+
+        for (int i = 0; i < rotor_inertias.size(); i++) {
+            rotor_inertia_vector(i,0) = rotor_inertias[i]/joint_etas[i]/joint_etas[i];
+        }
+        casadi::MX rotor_inertia = casadi::MX::diag(rotor_inertia_vector);
+
+        return rotor_inertia;
+    }
+
+    casadi::MX MoeDynamicModel::cas_get_effective_M_m() {
+        casadi::MX effective_M = cas_get_M_m() + cas_get_rotor_inertia_m();
+       
+       
+        return effective_M;
+    }
+
 #endif
 }

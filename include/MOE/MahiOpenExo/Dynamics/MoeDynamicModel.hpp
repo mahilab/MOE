@@ -83,6 +83,7 @@ namespace moe {
         public:
         // Function to get M
         casadi::SX cas_get_M();
+        casadi::MX cas_get_M_m();
         // Function to get V
         casadi::SX cas_get_V();
         casadi::MX cas_get_V_m();
@@ -91,10 +92,13 @@ namespace moe {
         casadi::MX cas_get_G_m();
         // Function to get Friction
         casadi::SX cas_get_Friction();
+        casadi::MX cas_get_Friction_m();
         // Function to get the rotor inertia
         casadi::SX cas_get_rotor_inertia();
+        casadi::MX cas_get_rotor_inertia_m();
         // Function to get effective mass
         casadi::SX cas_get_effective_M();
+        casadi::MX cas_get_effective_M_m();
 
         casadi::SX q0;
         casadi::SX q1;
