@@ -85,6 +85,7 @@ namespace moe {
         casadi::SX cas_get_M();
         // Function to get V
         casadi::SX cas_get_V();
+        casadi::MX cas_get_V_m();
         // Function to get G
         casadi::SX cas_get_G();
         casadi::MX cas_get_G_m();

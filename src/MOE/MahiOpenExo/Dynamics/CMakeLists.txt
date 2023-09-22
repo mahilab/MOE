@@ -13,5 +13,6 @@ if (WITH_MAHI_MPC)
         cas_G_m.cpp
         cas_M.cpp
         cas_V.cpp
+        cas_V_m.cpp
         cas_Friction.cpp)
 endif()
