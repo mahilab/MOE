@@ -26,7 +26,7 @@ namespace moe {
         q1m_dot = casadi::MX::sym("q1m_dot");
         q2m_dot = casadi::MX::sym("q2m_dot");
         q3m_dot = casadi::MX::sym("q3m_dot");
-        cas_qmq = casadi::MX::vertcat({q0m,q1m,q2m,q3m});
+        cas_qm = casadi::MX::vertcat({q0m,q1m,q2m,q3m});
         cas_qdm = casadi::MX::vertcat({q0m_dot,q1m_dot,q2m_dot,q3m_dot});
 #endif
     }
