@@ -3,7 +3,10 @@
 #include <Mahi/Util/Logging/Log.hpp>
 #include <Mahi/Com/MelShare.hpp>
 #include <iostream>
+#include <iterator>
+#include <random>
 
+using namespace std;
 using namespace mahi::util;
 
 namespace moe {

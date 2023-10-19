@@ -10,6 +10,7 @@ using namespace mahi::daq;
 using namespace mahi::robo;
 using namespace mahi::com;
 using namespace moe;
+using namespace std;
 
 using mahi::robo::WayPoint;
 
@@ -185,6 +186,7 @@ int main(int argc, char* argv[]) {
 
     // trajectory following
     LOG(Info) << "Starting Movement.";
+    //LOG(Info) << "ENTRA";
 
     std::vector<std::vector<double>> data;
     std::vector<double> data_line;
