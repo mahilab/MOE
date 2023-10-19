@@ -35,7 +35,6 @@ namespace moe {
         /// Enables each of the joints on the MOE
         bool on_enable() override;
 
-
         std::vector<std::shared_ptr<Joint>> moe_joints; // vector of shared pointer of moe joints
         const MoeParameters params_;                    // parameters used to control the moe
 

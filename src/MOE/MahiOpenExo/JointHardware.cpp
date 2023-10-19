@@ -3,7 +3,10 @@
 #include <Mahi/Util/Logging/Log.hpp>
 #include <Mahi/Com/MelShare.hpp>
 #include <iostream>
+#include <iterator>
+#include <random>
 
+using namespace std;
 using namespace mahi::util;
 
 namespace moe {
@@ -81,7 +84,16 @@ void JointHardware::filter_velocity(){
     }
 }
 
+double JointHardware::noise_degradation(){ //qué es lo que tengo de devolver PREGUNTARLE A ULI //MANUELAAAAAAAA
+    const double mean = 0.0;
+    const double stddev = 1000;
+    std::default_random_engine generator;
+    std::normal_distribution<double> dist(mean, stddev);
+    return dist(generator);
+}
+
 double JointHardware::get_position() {
+    cout << noise_degradation();
     return m_position_transmission*m_position_sensor->get_pos();
 }
 

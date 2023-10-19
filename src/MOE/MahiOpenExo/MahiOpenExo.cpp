@@ -7,10 +7,14 @@
 #include <Mahi/Util/Print.hpp>
 #include <Mahi/Util/Logging/Log.hpp>
 #include <Eigen/Dense>
+#include <iostream>
+#include <iterator>
+#include <random>
 
 using namespace mahi::util;
 using namespace mahi::daq;
 using namespace mahi::robo;
+using namespace std;
 
 namespace moe {
 
@@ -76,6 +80,7 @@ namespace moe {
 
             // update the position and velocity variables a single time
             m_joint_positions[i] = moe_joints[i]->get_position();
+            cout << "Hola";
             m_joint_velocities[i] = moe_joints[i]->get_velocity();
         }
         // update the state of moe_dynamic_model

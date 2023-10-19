@@ -34,6 +34,9 @@ public:
     /// Converts PositionSensor position to Joint Position
     double get_position();
 
+    /// Add noise Gaussian noise to the position and velocity 
+    double noise_degradation(); //MANUELAAAAAAAAA
+
     /// Converts PositionSensor velocity to Joint velocity
     double get_velocity();
 

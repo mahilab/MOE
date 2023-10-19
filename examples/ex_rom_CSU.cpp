@@ -10,6 +10,7 @@ using namespace mahi::daq;
 using namespace mahi::robo;
 using namespace mahi::com;
 using namespace moe;
+using namespace std;
 
 using mahi::robo::WayPoint;
 
@@ -184,7 +185,8 @@ int main(int argc, char* argv[]) {
 	// moe->daq_watchdog_start();    
 
     // trajectory following
-    LOG(Info) << "Starting Movement.";
+    //LOG(Info) << "Starting Movement.";
+    LOG(Info) << "ENTRA";
 
     std::vector<std::vector<double>> data;
     std::vector<double> data_line;
@@ -203,6 +205,7 @@ int main(int argc, char* argv[]) {
 
         // update MahiOpenExo kinematics
         moe->update();
+        LOG(Info) << "ENTRA";
 
         if (current_state != wrist_circle) {
             // update reference from trajectory
