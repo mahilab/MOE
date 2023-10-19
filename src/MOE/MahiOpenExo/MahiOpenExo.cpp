@@ -10,6 +10,8 @@
 #include <iostream>
 #include <iterator>
 #include <random>
+#include <chrono>
+#include<ctime>
 
 using namespace mahi::util;
 using namespace mahi::daq;
@@ -73,14 +75,31 @@ namespace moe {
         stop = true;
     }
 
+    double MahiOpenExo::noise_degradation(){ //qué es lo que tengo de devolver PREGUNTARLE A ULI //MANUELAAAAAAAA
+        unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+        std::default_random_engine generator (seed);
+
+        std::normal_distribution<double> distribution (0.0,0.01);
+        return distribution(generator);
+    }
+
+    double MahiOpenExo::noise_lowFreq(){
+        double max_amplitude = 0.05;
+        vector <float> frequencies{1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8};
+        double noise = 0;
+        for (int i = 0; i < frequencies.size(); i++) {
+            noise = noise + sin(frequencies[i]*2*PI*clock()/CLOCKS_PER_SEC);
+        }
+        return max_amplitude*noise/frequencies.size();
+    }
+
     void MahiOpenExo::update(){
         for (size_t i = 0; i < n_j; i++){
             // filters velocity if the joint uses software filter (only an option for hardware)
             moe_joints[i]->filter_velocity();
 
             // update the position and velocity variables a single time
-            m_joint_positions[i] = moe_joints[i]->get_position();
-            cout << "Hola";
+            m_joint_positions[i] = moe_joints[i]->get_position()+noise_lowFreq();
             m_joint_velocities[i] = moe_joints[i]->get_velocity();
         }
         // update the state of moe_dynamic_model
